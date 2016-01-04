@@ -36,6 +36,7 @@ import org.apache.calcite.sql.advise.SqlSimpleParser;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.SqlParser.ConfigBuilder;
+import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlModality;
@@ -104,8 +105,7 @@ public class Parser {
 				
 			    SqlNode v_node = pl.validate(node);
 			    
-			    
-				
+			
 //				SqlVaSqlValidatorUtil.newValidator(org.apache.calcite.sql.SqlOperatorTable,
 //						org.apache.calcite.sql.validate.SqlValidatorCatalogReader,
 //						org.apache.calcite.rel.type.RelDataTypeFactory);

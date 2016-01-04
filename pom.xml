@@ -8,7 +8,6 @@
 
 
 	<dependencies>
-
 		<dependency>
 			<groupId>org.apache.calcite</groupId>
 			<artifactId>calcite-core</artifactId>
@@ -28,9 +27,6 @@
 			<artifactId>calcite-example-function</artifactId>
 			<version>1.5.0</version>
 		</dependency>
-
-
 	</dependencies>
-
 
 </project>
