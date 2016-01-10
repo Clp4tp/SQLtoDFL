@@ -1,4 +1,4 @@
-package parser;
+package foundation.db;
 
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.FromList;

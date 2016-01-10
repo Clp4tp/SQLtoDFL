@@ -13,8 +13,6 @@ import org.apache.calcite.tools.Planner;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.StatementNode;
 
-import parser.VisitorF;
-
 public class FoundationParser {
 	public void attachShutDownHook() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {

@@ -117,70 +117,9 @@ public class Parser {
 				// Query();
 				// SqlValidator validator = new
 				// node.validateExpr
-				
-			    SqlVisitor<SqlNode> visitor = new SqlVisitor<SqlNode>() {
-					
-					@Override
-					public SqlNode visit(SqlIntervalQualifier intervalQualifier) {
-						// TODO Auto-generated method stub
-						
-						return null;
-					}
-					
-					@Override
-					public SqlNode visit(SqlDynamicParam param) {
-						// TODO Auto-generated method stub
-						return null;
-					}
-					
-					@Override
-					public SqlNode visit(SqlDataTypeSpec type) {
-						// TODO Auto-generated method stub
-						return null;
-					}
-					
-					@Override
-					public SqlNode visit(SqlIdentifier id) {
-						System.out.println("Table "+ id.names.get(0));
-						return null;
-					}
-					
-					@Override
-					public SqlNode visit(SqlNodeList nodeList) {
-						// TODO Auto-generated method stub
-						if(nodeList instanceof SqlNode){
-							System.out.println("hello");
-						}
-						return null;
-					}
-					
-					@Override
-					public SqlNode visit(SqlCall call) {
-						// TODO Auto-generated method stub
-						if(call instanceof SqlSelect){
-							
-							
-							 SqlNode node =((SqlSelect) call).getFrom();
-							 node.accept(this);
-							System.out.println("hello");
-						}
-						if(call instanceof SqlJoin){
-							SqlNode node =((SqlJoin) call).getLeft();
-							node.accept(this);
-							System.out.println("SqlJoin");
-						}
-						
-						return null;
-					}
-					
-					@Override
-					public SqlNode visit(SqlLiteral literal) {
-						// TODO Auto-generated method stub
-						return null;
-					}
-				};
-				
-				node.accept(visitor);
+				SqlVisitorX<SqlNode> inspectorX =  new SqlVisitorX<>();
+			 
+				node.accept(inspectorX);
 				
 			} catch (SqlParseException | IOException e) {
 				// TODO Auto-generated catch block
