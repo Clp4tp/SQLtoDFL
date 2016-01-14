@@ -82,16 +82,17 @@ public class Parser {
 		Parser parser = new Parser();
 		parser.attachShutDownHook();
 
-		while (true) {
+//		while (true) {
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 			try {
-				String s = "";
-				while (!s.contains(";")) {
-					s = s + br.readLine();
-				}
-				s = s.replace(";", " ").replace("\n", " ");
+//				String s = "";
+//				while (!s.contains(";")) {
+//					s = s + br.readLine();
+//				}
+				String s;
+//				s = s.replace(";", " ").replace("\n", " ");
 				SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
-				s = "select A.id from A, B, C where A.id=B.id and C.name=B.name";
+				s = "select A.id from A, B, C where (A.id=B.id and C.name=B.name and C.age<A.age) or C.age<>A.age";
 				System.out.println("SIMPLE PARSER :" + simpleparser.simplifySql(s));
 
 				SqlParser b = SqlParser.create(s);
@@ -121,15 +122,16 @@ public class Parser {
 			 
 				node.accept(inspectorX);
 				
-			} catch (SqlParseException | IOException e) {
+			} catch (SqlParseException e) {
 				// TODO Auto-generated catch block
 				// System.out.println(e.toString());
 				// System.out.println(e.getLocalizedMessage());
 				// System.out.println(e.getMessage());
 				e.printStackTrace(System.out);
 			}
-		}
+//while true		}
 
 	}
 
 }
+	
