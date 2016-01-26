@@ -46,19 +46,19 @@ public class SqlVisitorX<R> implements SqlVisitor<R> {
 	
 	public R visit(SqlBasicCall id) {
 		
-		System.out.println("wololo");
+//		System.out.println("wololo");
 		return null;
 	}
 	
 	@Override
 	public R visit(SqlNodeList nodeList) {
-		System.out.println("hello");
+//		System.out.println("hello");
 		for(SqlNode n : nodeList.getList()){
 			n.accept(this);
 		}
 		// TODO Auto-generated method stub
 		if(nodeList instanceof SqlNode){
-			System.out.println("hello");
+//			System.out.println("hello");
 		}
 		return null;
 	}
@@ -69,47 +69,42 @@ public class SqlVisitorX<R> implements SqlVisitor<R> {
 		SqlOperator op = call.getOperator();
 		
 		if (call instanceof SqlBasicCall){
-//			SqlNodeList list =(SqlNodeList) call.getOperandList();
-//			SqlNode[] nodeList =  ((SqlBasicCall) call).getOperands();
+
 			
 			SqlOperator op1 =((SqlBasicCall) call).getOperator();
 			SqlNode[] operands = ((SqlBasicCall) call).getOperands();
-//			System.out.println(op1.getName());
 			if(operands[0] instanceof SqlIdentifier){
 				operands[0].accept(this);
-				System.out.print(op1.getName());
+				System.out.print(" " + op1.getName() + " ");
 				operands[1].accept(this);
 			}
-			else{System.out.println(op1.getName());
+			else{System.out.print(" " + op1.getName() + " ");
 			for (int i=operands.length-1; i>=0;i--) operands[i].accept(this);
 			}
-			System.out.println();
-//			((SqlBasicCall) call).
-//			System.out.println(op1.getName());
-//			System.out.println("fuck off");
+			System.out.print(" ");
 		}
 		
 		if(call instanceof SqlSelect){
 			
 			 SqlNodeList selectList= ((SqlSelect) call).getSelectList();
 			 selectList.accept(this);
+			 System.out.println();
 			 SqlNode node =((SqlSelect) call).getFrom();
 			 node.accept(this);
+			 System.out.println();
 			 SqlNode where=((SqlSelect) call).getWhere();
 			 SqlNodeList slqNodeList=((SqlSelect) call).getWindowList();
-			 SqlOperator oper=((SqlSelect) call).getOperator();
-			 
+			 SqlOperator oper=((SqlBasicCall) where).getOperator();
+			 System.out.print(" "+ oper.getName()+ " ");
 			 SqlNode[] nodeList =  ((SqlBasicCall) where).getOperands();
 			 List<SqlNode> listNode =  ( (SqlBasicCall) where).getOperandList();
-			 System.out.println();
+
 			 SqlOperator op1 =((SqlBasicCall) where).getOperator();
-			 
+//			 System.out.println(nodeList[0].toString()+ " | " + nodeList[1].toString());
 			 for(int i=nodeList.length-1; i>=0;i--) {((SqlBasicCall) nodeList[i]).accept(this);}
-			 System.out.println(op1.getName());
-//			 SqlNode[] nodeList =  ((SqlBasicCall) where).getOperands();
+			
 			 
-			 System.out.println("sqlSelect");
-//			 (SqlBasicCall)nodeList[0].
+
 		}
 		if(call instanceof SqlJoin){
 			SqlNode nodeL =((SqlJoin) call).getLeft();
@@ -117,7 +112,7 @@ public class SqlVisitorX<R> implements SqlVisitor<R> {
 			SqlNode nodeR = ((SqlJoin) call).getRight();
 			if(nodeR!=null){nodeR.accept(this);}
 			
-//			System.out.println("SqlJoin");
+
 		}
 		 
 

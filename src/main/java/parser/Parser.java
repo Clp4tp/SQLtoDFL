@@ -92,7 +92,7 @@ public class Parser {
 				String s;
 //				s = s.replace(";", " ").replace("\n", " ");
 				SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
-				s = "select A.id from A, B, C where (A.id=B.id and C.name=B.name and C.age<A.age) or C.age<>A.age";
+				s = "select A.id from A, B, C where A.id=B.id and C.name=B.name or C.age<B.age and C.age<>A.age";
 				System.out.println("SIMPLE PARSER :" + simpleparser.simplifySql(s));
 
 				SqlParser b = SqlParser.create(s);
@@ -118,10 +118,15 @@ public class Parser {
 				// Query();
 				// SqlValidator validator = new
 				// node.validateExpr
+				
+				SqlBasicVisitorTest<SqlNode> insperctorB =  new  SqlBasicVisitorTest<>();
+				node.accept(insperctorB);
+				System.out.println("-----------------------------------");
 				SqlVisitorX<SqlNode> inspectorX =  new SqlVisitorX<>();
-			 
 				node.accept(inspectorX);
 				
+				
+
 			} catch (SqlParseException e) {
 				// TODO Auto-generated catch block
 				// System.out.println(e.toString());
