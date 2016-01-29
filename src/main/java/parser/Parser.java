@@ -28,6 +28,7 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlMerge;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
@@ -60,83 +61,48 @@ import com.foundationdb.sql.parser.FromTable;
 //to send sigint ^c use this 
 //kill -s INT 3040
 public class Parser {
-	public static FrameworkConfig frameworkConfig;
+    public static FrameworkConfig frameworkConfig;
 
-	public void attachShutDownHook() {
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			@Override
-			public void run() {
-				System.out.println("Bye!");
+    public void attachShutDownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                System.out.println("Terminated!");
+            }
+        });
+        System.out.println("Shut Down Hook Attached.");
+    }
 
-			}
-		});
-		System.out.println("Shut Down Hook Attached.");
-	}
-
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		SqlSimpleParser a = new SqlSimpleParser("parser");
-
-		System.out.println(a.simplifySql("select * from users where users.id = 1 ;"));
-
-		Parser parser = new Parser();
-		parser.attachShutDownHook();
-
-//		while (true) {
-			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-			try {
-//				String s = "";
-//				while (!s.contains(";")) {
-//					s = s + br.readLine();
-//				}
-				String s;
-//				s = s.replace(";", " ").replace("\n", " ");
-				SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
-				s = "select A.id from A, B, C where A.id=B.id and C.name=B.name or C.age<B.age and C.age<>A.age";
-				System.out.println("SIMPLE PARSER :" + simpleparser.simplifySql(s));
-
-				SqlParser b = SqlParser.create(s);
-				SqlNode node = b.parseStmt();
-//				node.validate(, scope);
-				System.out.println("SQLParser :" + node.toString());
-				
-				
-//				ConfigBuilder aaa = Frameworks.getPlanner()
-				org.apache.calcite.tools.Frameworks.ConfigBuilder configBuilder = Frameworks.newConfigBuilder();
-				FrameworkConfig fC = configBuilder.build();
-				Planner pl = Frameworks.getPlanner(fC);
-				
-				node =  pl.parse(s);
-				System.out.println("---Planner:" + node.toString());
-//				node.validate();
-//			    SqlNode v_node = pl.validate(node);
-			    
-			
-//				SqlVaSqlValidatorUtil.newValidator(org.apache.calcite.sql.SqlOperatorTable,
-//						org.apache.calcite.sql.validate.SqlValidatorCatalogReader,
-//						org.apache.calcite.rel.type.RelDataTypeFactory);
-				// Query();
-				// SqlValidator validator = new
-				// node.validateExpr
-				
-				SqlBasicVisitorTest<SqlNode> insperctorB =  new  SqlBasicVisitorTest<>();
-				node.accept(insperctorB);
-				System.out.println("-----------------------------------");
-				SqlVisitorX<SqlNode> inspectorX =  new SqlVisitorX<>();
-				node.accept(inspectorX);
-				
-				
-
-			} catch (SqlParseException e) {
-				// TODO Auto-generated catch block
-				// System.out.println(e.toString());
-				// System.out.println(e.getLocalizedMessage());
-				// System.out.println(e.getMessage());
-				e.printStackTrace(System.out);
-			}
-//while true		}
-
-	}
+    public static void main(String[] args) {
+        // TODO Auto-generated method stub
+        SqlSimpleParser a = new SqlSimpleParser("parser");
+        System.out.println(a.simplifySql("select * from users where users.id = 1 ;"));
+        Parser parser = new Parser();
+        parser.attachShutDownHook();
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            String s;
+            SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
+            s = "select distinct A.id from A, B, C where A.id=B.id and C.name=B.name and C.age<B.age or C.age<>A.age and "
+                    + "C.age in (Select * from B where B.name='Jim')";
+            System.out.println("SIMPLE PARSER :" + simpleparser.simplifySql(s));
+            SqlParser b = SqlParser.create(s);
+            SqlNode node = b.parseStmt();
+            System.out.println("SQLParser :" + node.toString());
+            org.apache.calcite.tools.Frameworks.ConfigBuilder configBuilder = Frameworks.newConfigBuilder();
+            FrameworkConfig fC = configBuilder.build();
+            Planner pl = Frameworks.getPlanner(fC);
+            node = pl.parse(s);
+            System.out.println("---Planner:" + node.toString());
+            
+            SqlBasicVisitorTest<SqlNode> insperctorB = new SqlBasicVisitorTest<>();
+            node.accept(insperctorB);
+            System.out.println("-----------------------------------");
+            SqlVisitorX<SqlNode> inspectorX = new SqlVisitorX<>();
+            node.accept(inspectorX);
+        } catch (SqlParseException e) {
+            e.printStackTrace(System.out);
+        }
+    }
 
 }
-	

@@ -16,8 +16,11 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.util.SqlVisitor;
 
-public class SqlVisitorX<R> implements SqlVisitor<R> {
-
+public class SqlVisitorX<R> implements SqlVisitor<R>  {
+    
+    
+    
+    
 	@Override
 	public R visit(SqlIntervalQualifier intervalQualifier) {
 		// TODO Auto-generated method stub
@@ -62,6 +65,8 @@ public class SqlVisitorX<R> implements SqlVisitor<R> {
 		}
 		return null;
 	}
+	
+	
 	
 	@Override
 	public R visit(SqlCall call) {
