@@ -61,48 +61,70 @@ import com.foundationdb.sql.parser.FromTable;
 //to send sigint ^c use this 
 //kill -s INT 3040
 public class Parser {
-    public static FrameworkConfig frameworkConfig;
+	public static FrameworkConfig frameworkConfig;
 
-    public void attachShutDownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                System.out.println("Terminated!");
-            }
-        });
-        System.out.println("Shut Down Hook Attached.");
-    }
+	public void attachShutDownHook() {
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				System.out.println("Terminated!");
+			}
+		});
+		System.out.println("Shut Down Hook Attached.");
+	}
 
-    public static void main(String[] args) {
-        // TODO Auto-generated method stub
-        SqlSimpleParser a = new SqlSimpleParser("parser");
-        System.out.println(a.simplifySql("select * from users where users.id = 1 ;"));
-        Parser parser = new Parser();
-        parser.attachShutDownHook();
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        try {
-            String s;
-            SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
-            s = "select distinct A.id from A, B, C where A.id=B.id and C.name=B.name and C.age<B.age or C.age<>A.age and "
-                    + "C.age in (Select * from B where B.name='Jim')";
-            System.out.println("SIMPLE PARSER :" + simpleparser.simplifySql(s));
-            SqlParser b = SqlParser.create(s);
-            SqlNode node = b.parseStmt();
-            System.out.println("SQLParser :" + node.toString());
-            org.apache.calcite.tools.Frameworks.ConfigBuilder configBuilder = Frameworks.newConfigBuilder();
-            FrameworkConfig fC = configBuilder.build();
-            Planner pl = Frameworks.getPlanner(fC);
-            node = pl.parse(s);
-            System.out.println("---Planner:" + node.toString());
-            
-            SqlBasicVisitorTest<SqlNode> insperctorB = new SqlBasicVisitorTest<>();
-            node.accept(insperctorB);
-            System.out.println("-----------------------------------");
-            SqlVisitorX<SqlNode> inspectorX = new SqlVisitorX<>();
-            node.accept(inspectorX);
-        } catch (SqlParseException e) {
-            e.printStackTrace(System.out);
-        }
-    }
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		SqlSimpleParser a = new SqlSimpleParser("parser");
+		System.out.println(a.simplifySql("select * from users where users.id = 1 ;"));
+		Parser parser = new Parser();
+		parser.attachShutDownHook();
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		try {
+			String s;
+			SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
+			s = "select distinct count(A.id) as \"count\",  C.name from A, B, C, D where A.id=B.id and C.name=B.name and C.age<B.age or C.age<>A.age   group by A.id , C.name ";
+			// and + "C.age in (Select * from B where B.name='Jim')
+			System.out.println("SIMPLE PARSER :" + simpleparser.simplifySql(s));
+			SqlParser b = SqlParser.create(s);
+			SqlNode node = b.parseStmt();
+			System.out.println("SQLParser :" + node.toString());
+			org.apache.calcite.tools.Frameworks.ConfigBuilder configBuilder = Frameworks.newConfigBuilder();
+			FrameworkConfig fC = configBuilder.build();
+			Planner pl = Frameworks.getPlanner(fC);
+			node = pl.parse(s);
+			System.out.println("---Planner:" + node.toString());
+
+			MySqlVisitorImpl<SqlNodeList> insperctorB = new MySqlVisitorImpl<>();
+			
+			//ORDER BY is FUCKING DIFFERENT
+			SqlQueryMeta query  = new SqlQueryMeta((SqlSelect)node);
+			SqlNode ps =query.getSelect().accept(insperctorB);
+			
+			System.out.println();
+			System.out.println(insperctorB.identifiers);
+			query.setSelectIdentifiers(insperctorB.identifiers);
+			
+			insperctorB = new MySqlVisitorImpl<>();
+			query.getWhere().accept(insperctorB);
+			query.setWhereIdentifiers(insperctorB.identifiers);
+			
+			insperctorB = new MySqlVisitorImpl<>();
+			query.getGroupby().accept(insperctorB);
+			query.setGroupByIdentifiers(insperctorB.identifiers);
+			
+			
+			
+			insperctorB = new MySqlVisitorImpl<>();
+			query.getOrderby().accept(insperctorB);
+//			query.setGroupByIdentifiers(insperctorB.identifiers);
+			
+			System.out.println("heyy");
+			
+
+		} catch (SqlParseException e) {
+			e.printStackTrace(System.out);
+		}
+	}
 
 }

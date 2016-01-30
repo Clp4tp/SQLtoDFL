@@ -20,9 +20,9 @@ import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.util.SqlBasicVisitor.ArgHandler;
 
-public class SqlBasicVisitorTest<R> implements SqlVisitor<R>, ArgHandler<R> {
+public class MySqlVisitorImpl<R> implements SqlVisitor<R>, ArgHandler<R> {
 
-	public List<String[]> selectIdentifiers = new ArrayList<>();
+	public List<String[]> identifiers = new ArrayList<>();
 
 	private SqlSimpleNode node;
 	SqlBasicVisitor.ArgHandler<R> argHandler = SqlBasicVisitor.ArgHandlerImpl.instance();
@@ -30,7 +30,7 @@ public class SqlBasicVisitorTest<R> implements SqlVisitor<R>, ArgHandler<R> {
 	SqlSimpleNode presentNode;
 	// List<SqlQueryMeta> qMeta;
 
-	public SqlBasicVisitorTest() {
+	public MySqlVisitorImpl() {
 		root = new SqlSimpleNode();
 		presentNode = root;
 		// qMeta = new ArrayList<>();
@@ -83,11 +83,11 @@ public class SqlBasicVisitorTest<R> implements SqlVisitor<R>, ArgHandler<R> {
 		// TODO Auto-generated method stub
 		if (id.isSimple()) {
 			System.out.println("Simple " + id.getSimple());
-			selectIdentifiers.add(new String[] { id.getSimple() });
+			identifiers.add(new String[] { id.getSimple() });
 			
 		} else {
 			System.out.println(id.names);
-			selectIdentifiers.add(new String[] { id.names.get(0), id.names.get(1) });
+			identifiers.add(new String[] { id.names.get(0), id.names.get(1) });
 			
 		}
 		return (R) id;
