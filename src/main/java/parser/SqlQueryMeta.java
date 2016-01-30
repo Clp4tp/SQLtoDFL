@@ -28,7 +28,7 @@ public class SqlQueryMeta {
 	public List<String[]> groupByIdentifiers;
 
 	private ArrayList<String> fromTables;
-	private SqlSimpleNode selectList;
+//	private SqlSimpleNode selectList;
 
 	public SqlQueryMeta(SqlSelect call) {
 		this.call = call;
@@ -51,7 +51,7 @@ public class SqlQueryMeta {
 			fromTables.add(((SqlIdentifier) from).getSimple());
 		}
 
-		selectList = new SqlSimpleNode();
+//		selectList = new SqlSimpleNode();
 		// selectList.setOperator(operator);
 
 	}
@@ -89,13 +89,13 @@ public class SqlQueryMeta {
 		this.selectIdentifiers = selectIdentifiers;
 	}
 
-	public SqlSimpleNode getSelectList() {
-		return selectList;
-	}
-
-	public void setSelectList(SqlSimpleNode selectList) {
-		this.selectList = selectList;
-	}
+//	public SqlSimpleNode getSelectList() {
+//		return selectList;
+//	}
+//
+//	public void setSelectList(SqlSimpleNode selectList) {
+//		this.selectList = selectList;
+//	}
 
 	// mundane
 	public boolean isHasGroupBy() {

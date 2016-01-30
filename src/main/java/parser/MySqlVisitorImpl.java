@@ -24,15 +24,15 @@ public class MySqlVisitorImpl<R> implements SqlVisitor<R>, ArgHandler<R> {
 
 	public List<String[]> identifiers = new ArrayList<>();
 
-	private SqlSimpleNode node;
+//	private SqlSimpleNode node;
 	SqlBasicVisitor.ArgHandler<R> argHandler = SqlBasicVisitor.ArgHandlerImpl.instance();
-	private final SqlSimpleNode root;
-	SqlSimpleNode presentNode;
+//	private final SqlSimpleNode root;
+//	SqlSimpleNode presentNode;
 	// List<SqlQueryMeta> qMeta;
 
 	public MySqlVisitorImpl() {
-		root = new SqlSimpleNode();
-		presentNode = root;
+//		root = new SqlSimpleNode();
+//		presentNode = root;
 		// qMeta = new ArrayList<>();
 
 	}
@@ -43,20 +43,20 @@ public class MySqlVisitorImpl<R> implements SqlVisitor<R>, ArgHandler<R> {
 		SqlOperator op = call.getOperator();
 
 		// SqlNode from =((SqlSelect) call).getFrom();
-		presentNode.setOperator(op);
+//		presentNode.setOperator(op);
 		System.out.println(call.toString());
 		boolean t = op.isDeterministic();
 		t = op.isAggregator();
 		t = op.isDynamicFunction();
 		List<SqlNode> l = call.getOperandList();
 		if (!l.isEmpty()) {
-			SqlSimpleNode leftNode = new SqlSimpleNode();
+//			SqlSimpleNode leftNode = new SqlSimpleNode();
 
 			// presentNode.setLeftNode();
 		}
 		System.out.println(op.getName());
 
-		return presentNode.getOperator().acceptCall(this, call);
+		return op.acceptCall(this, call);
 
 		// return null;
 	}
