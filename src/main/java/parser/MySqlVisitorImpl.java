@@ -85,7 +85,11 @@ public class MySqlVisitorImpl<R> implements SqlVisitor<R>, ArgHandler<R> {
 			System.out.println("Simple " + id.getSimple());
 			identifiers.add(new String[] { id.getSimple() });
 			
-		} else {
+		} else if(id.isStar())  {
+			
+			identifiers.add(new String[]{"*"});
+		}
+		else {
 			System.out.println(id.names);
 			identifiers.add(new String[] { id.names.get(0), id.names.get(1) });
 			

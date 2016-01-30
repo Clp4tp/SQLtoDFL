@@ -83,7 +83,7 @@ public class Parser {
 		try {
 			String s;
 			SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
-			s = "select distinct count(A.id) as \"count\",  C.name from A, B, C, D where A.id=B.id and C.name=B.name and C.age<B.age or C.age<>A.age   group by A.id , C.name ";
+			s = "select distinct count(A.id) as \"count\",  C.name from A, B, C, D where A.id=B.id and C.name=B.name and C.age<B.age or C.age<>A.age and C.name in (Select * from users)  group by A.id , C.name ";
 			// and + "C.age in (Select * from B where B.name='Jim')
 			System.out.println("SIMPLE PARSER :" + simpleparser.simplifySql(s));
 			SqlParser b = SqlParser.create(s);
@@ -114,12 +114,10 @@ public class Parser {
 			query.setGroupByIdentifiers(insperctorB.identifiers);
 			
 			
-			
-			insperctorB = new MySqlVisitorImpl<>();
-			query.getOrderby().accept(insperctorB);
-//			query.setGroupByIdentifiers(insperctorB.identifiers);
-			
-			System.out.println("heyy");
+//			//ORDER BY is FUCKING DIFFERENT
+//			insperctorB = new MySqlVisitorImpl<>();
+//			query.getOrderby().accept(insperctorB);
+
 			
 
 		} catch (SqlParseException e) {
