@@ -95,7 +95,7 @@ public class Parser {
 		String s;
 		SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
 		s = "select distinct count(A.id) as \"count\", C.salary,  C.name from A, B, C, D where A.id=B.id and C.name=B.name and "
-				+ "C.age<B.age or C.age<>A.age and C.name=B.name  group by A.id , C.name ";
+				+ "C.age<B.age or C.age<>A.age and D.name=B.name  group by A.id , C.name ";
 		// and + "C.age in (Select * from B where B.name='Jim')
 		System.out.println("SIMPLE PARSER :" + simpleparser.simplifySql(s));
 		SqlParser b = SqlParser.create(s);
@@ -143,18 +143,12 @@ public class Parser {
 		Path path = Paths.get("../UDF_Statement.sql");
 		//
 		log.info("Any sql files will be placed under current directory " + path.toUri().toString());
-		byte[] fileArray;
-		Charset charset = Charset.forName("UTF-8");
-		String stmt = "Distributed create table temp A to 10 on id as Select id from A ;";
-
-		try (BufferedWriter writer = Files.newBufferedWriter(path, charset)) {
-			writer.write(stmt, 0, stmt.length());
-		} catch (IOException x) {
-			log.error("Exception {}", x.getMessage());
-		}
-		Multimap<String, String> map = query.findTableParticipatingIdentifiers(query.getSelectIdentifiers());
-		map = query.findTableParticipatingIdentifiers(query.getWhereIdentifiers());
-
+		
+		
+		DflComposer.writeTableToFile(path,query , 10, "id");
+		
+		
+		
 		log.info("sup");
 
 	}
