@@ -1,6 +1,7 @@
 package parser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.calcite.sql.SqlIdentifier;
@@ -8,8 +9,14 @@ import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlSelect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 public class SqlQueryMeta {
+	private static Logger log = LoggerFactory.getLogger(SqlQueryMeta.class);
 	private final SqlSelect call;
 	private boolean hasGroupBy;
 	private boolean hasOrderBy;
@@ -28,7 +35,7 @@ public class SqlQueryMeta {
 	public List<String[]> groupByIdentifiers;
 
 	private ArrayList<String> fromTables;
-//	private SqlSimpleNode selectList;
+	// private SqlSimpleNode selectList;
 
 	public SqlQueryMeta(SqlSelect call) {
 		this.call = call;
@@ -51,9 +58,32 @@ public class SqlQueryMeta {
 			fromTables.add(((SqlIdentifier) from).getSimple());
 		}
 
-//		selectList = new SqlSimpleNode();
+		// selectList = new SqlSimpleNode();
 		// selectList.setOperator(operator);
 
+	}
+
+	/**
+	 * For each table participating in the sql statement, find its participating fields and export them to a String[][] table.
+	 * Each row of this table corresponds to the table in use and afterwards its participating fields
+	 * @return 
+	 * 
+	 */
+	public Multimap<String, String> findTableParticipatingIdentifiers(List<String[]> clause){
+		
+		Multimap<String, String> filteredData = HashMultimap.create();
+//		for(String[] row : whereIdentifiers) filteredData.put(row[0], row[1]);
+		for(String[] row : clause) {
+			if(row.length>1) // everything contained here is a function such as (count avg etc)
+			filteredData.put(row[0], row[1]);}	
+		
+		log.info("lets hope its not dead");
+		return filteredData;
+	}
+
+	public void createDFLStatement(String tableName, List<String> tableIdentifiers) {
+		log.info("adwdaw");
+		log.info("adwdaw");
 	}
 
 	public void analyzeFrom(SqlJoin from) {
@@ -69,9 +99,9 @@ public class SqlQueryMeta {
 		fromTables.add(((SqlIdentifier) from.getRight()).getSimple());
 	}
 
-	// public void analyzeFrom(SqlIdentifier from) {
-	// fromTables.add(from.getSimple());
-	// }
+	public void findUniqueTableRows() {
+
+	}
 
 	public List<String[]> getWhereIdentifiers() {
 		return whereIdentifiers;
@@ -89,13 +119,13 @@ public class SqlQueryMeta {
 		this.selectIdentifiers = selectIdentifiers;
 	}
 
-//	public SqlSimpleNode getSelectList() {
-//		return selectList;
-//	}
-//
-//	public void setSelectList(SqlSimpleNode selectList) {
-//		this.selectList = selectList;
-//	}
+	// public SqlSimpleNode getSelectList() {
+	// return selectList;
+	// }
+	//
+	// public void setSelectList(SqlSimpleNode selectList) {
+	// this.selectList = selectList;
+	// }
 
 	// mundane
 	public boolean isHasGroupBy() {

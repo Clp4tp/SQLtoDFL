@@ -1,8 +1,13 @@
 package parser;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -55,22 +60,28 @@ import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
 import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.foundationdb.sql.parser.FromTable;
+import com.google.common.collect.Multimap;
 
 //to send sigint ^c use this 
 //kill -s INT 3040
 public class Parser {
 	public static FrameworkConfig frameworkConfig;
+	private static Logger log = LoggerFactory.getLogger(Parser.class);
+
+	private static final String[] functions = { "count", "avg", "min", "max" };
 
 	public void attachShutDownHook() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				System.out.println("Terminated!");
+				log.error("Abrupty Terminated");
 			}
 		});
-		System.out.println("Shut Down Hook Attached.");
+		log.info("Shut Down Hook Attached.");
 	}
 
 	public static void main(String[] args) {
@@ -80,49 +91,72 @@ public class Parser {
 		Parser parser = new Parser();
 		parser.attachShutDownHook();
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+		String s;
+		SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
+		s = "select distinct count(A.id) as \"count\", C.salary,  C.name from A, B, C, D where A.id=B.id and C.name=B.name and "
+				+ "C.age<B.age or C.age<>A.age and C.name=B.name  group by A.id , C.name ";
+		// and + "C.age in (Select * from B where B.name='Jim')
+		System.out.println("SIMPLE PARSER :" + simpleparser.simplifySql(s));
+		SqlParser b = SqlParser.create(s);
+		SqlNode node = null;
 		try {
-			String s;
-			SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
-			s = "select distinct count(A.id) as \"count\",  C.name from A, B, C, D where A.id=B.id and C.name=B.name and C.age<B.age or C.age<>A.age and C.name in (Select * from users)  group by A.id , C.name ";
-			// and + "C.age in (Select * from B where B.name='Jim')
-			System.out.println("SIMPLE PARSER :" + simpleparser.simplifySql(s));
-			SqlParser b = SqlParser.create(s);
-			SqlNode node = b.parseStmt();
+			node = b.parseStmt();
 			System.out.println("SQLParser :" + node.toString());
 			org.apache.calcite.tools.Frameworks.ConfigBuilder configBuilder = Frameworks.newConfigBuilder();
 			FrameworkConfig fC = configBuilder.build();
 			Planner pl = Frameworks.getPlanner(fC);
 			node = pl.parse(s);
 			System.out.println("---Planner:" + node.toString());
-
-			MySqlVisitorImpl<SqlNodeList> insperctorB = new MySqlVisitorImpl<>();
-			
-			//ORDER BY is FUCKING DIFFERENT
-			SqlQueryMeta query  = new SqlQueryMeta((SqlSelect)node);
-			SqlNode ps =query.getSelect().accept(insperctorB);
-			
-			System.out.println();
-			System.out.println(insperctorB.identifiers);
-			query.setSelectIdentifiers(insperctorB.identifiers);
-			
-			insperctorB = new MySqlVisitorImpl<>();
-			query.getWhere().accept(insperctorB);
-			query.setWhereIdentifiers(insperctorB.identifiers);
-			
-			insperctorB = new MySqlVisitorImpl<>();
-			query.getGroupby().accept(insperctorB);
-			query.setGroupByIdentifiers(insperctorB.identifiers);
-			
-			
-//			//ORDER BY is FUCKING DIFFERENT
-//			insperctorB = new MySqlVisitorImpl<>();
-//			query.getOrderby().accept(insperctorB);
-
-			
-
 		} catch (SqlParseException e) {
-			e.printStackTrace(System.out);
+			log.error("SQLParseException" );
+			e.printStackTrace(System.err);
 		}
+		MySqlVisitorImpl<SqlNodeList> insperctorB = new MySqlVisitorImpl<>();
+		// MySqlVisitorImpl has a list of identifiers. When applied on an
+		// sql part i.e. say select statement, he returns the
+		// list of identifiers contained.
+		// ORDER BY is FUCKING DIFFERENT
+		SqlQueryMeta query = new SqlQueryMeta((SqlSelect) node);
+		SqlNode ps = query.getSelect().accept(insperctorB);
+
+		System.out.println();
+		System.out.println(insperctorB.identifiers);
+		query.setSelectIdentifiers(insperctorB.identifiers);
+
+		insperctorB = new MySqlVisitorImpl<>();
+		query.getWhere().accept(insperctorB);
+		query.setWhereIdentifiers(insperctorB.identifiers);
+
+		insperctorB = new MySqlVisitorImpl<>();
+		query.getGroupby().accept(insperctorB);
+		query.setGroupByIdentifiers(insperctorB.identifiers);
+
+		// //ORDER BY is FUCKING DIFFERENT
+		// insperctorB = new MySqlVisitorImpl<>();
+		// query.getOrderby().accept(insperctorB);
+		System.out.println("end");
+
+		// Start Specifying set of Unique tables in order to start making
+		// the sql batch call
+		log.debug("Start classifying tables ");
+		Path path = Paths.get("../UDF_Statement.sql");
+		//
+		log.info("Any sql files will be placed under current directory " + path.toUri().toString());
+		byte[] fileArray;
+		Charset charset = Charset.forName("UTF-8");
+		String stmt = "Distributed create table temp A to 10 on id as Select id from A ;";
+
+		try (BufferedWriter writer = Files.newBufferedWriter(path, charset)) {
+			writer.write(stmt, 0, stmt.length());
+		} catch (IOException x) {
+			log.error("Exception {}", x.getMessage());
+		}
+		Multimap<String, String> map = query.findTableParticipatingIdentifiers(query.getSelectIdentifiers());
+		map = query.findTableParticipatingIdentifiers(query.getWhereIdentifiers());
+
+		log.info("sup");
+
 	}
 
 }
