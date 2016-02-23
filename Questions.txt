@@ -1,0 +1,9 @@
+questions:
+	1. What happens if multiple tables are present and we have a count(*)?
+		Will this be included in any table?
+		
+	2. SUM is going to work if applied to different tables and then sum the sums?
+	
+	3. The above will not work for avg(I suppose)
+	
+	

@@ -27,6 +27,7 @@ public class SqlQueryMeta {
     private SqlNode                  from;
     private SqlNode                  where;
     private SqlNodeList              select;
+
     // private
     private SqlNodeList              orderby;
     private SqlNodeList              groupby;

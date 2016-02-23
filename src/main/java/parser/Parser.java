@@ -91,16 +91,19 @@ public class Parser {
         String s;
 
         // SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
-        s = "select distinct count(A.id) as \"count\", C.salary as \"sal\",  C.name as \"employee\", count(*) as total from A, B, C, D where A.id=B.id and C.name=B.name and "
-                + "C.age<B.age or C.age<>A.age and D.name=B.name  group by A.id , C.name ";
+        s = "select distinct count(A.id) as \"count\", count(*) as total from A , B, C, D where A.id=B.id and C.name=B.name ";
+
+//        s = "select distinct count(A.id) as \"count\", C.salary as \"sal\",  C.name as \"employee\", count(*) as total from A , B, C, D where A.id=B.id and C.name=B.name "
+//                + "and "
+//                + "C.age<B.age or C.age<>A.age and D.name=B.name  group by A.id , C.name ";
         // and + "C.age in (Select * from B where B.name='Jim')
-        s = "select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price,"
-                + " sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, "
-                + "avg(l_quantity) as avg_qty,  avg(l_extendedprice) as avg_price, avg(l_discount) as avg_disc, count(*) "
-                + "as count_order from lineitem where l_shipdate <= '1998-12-01' group by l_returnflag, l_linestatus ";
+//        s = "select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price,"
+//                + " sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, "
+//                + "avg(l_quantity) as avg_qty,  avg(l_extendedprice) as avg_price, avg(l_discount) as avg_disc, count(*) "
+//                + "as count_order from lineitem where l_shipdate <= '1998-12-01' group by l_returnflag, l_linestatus ";
 //        String end = "order by l_returnflag, l_linestatus";
         SqlNode node = parser.parseQuery(s);
-        MySqlVisitorImpl<SqlNodeList> insperctorB = new MySqlVisitorImpl<>();
+        SqlTreeReverseVisitor<SqlNodeList> insperctorB = new SqlTreeReverseVisitor<>();
         // MySqlVisitorImpl has a list of identifiers. When applied on an
         // sql part i.e. say select statement, he returns the
         // list of identifiers contained.
@@ -111,11 +114,12 @@ public class Parser {
         query.setSelectIdentifiers(insperctorB.identifiers);
         query.setAliasMap(insperctorB.aliasMap);
         query.setFunctionsMap(insperctorB.functionsMap);
-        insperctorB = new MySqlVisitorImpl<>();
+        
+        insperctorB = new SqlTreeReverseVisitor<>();
         query.getWhere().accept(insperctorB);
         query.setWhereIdentifiers(insperctorB.identifiers);
 
-        insperctorB = new MySqlVisitorImpl<>();
+        insperctorB = new SqlTreeReverseVisitor<>();
         query.getGroupby().accept(insperctorB);
         query.setGroupByIdentifiers(insperctorB.identifiers);
 

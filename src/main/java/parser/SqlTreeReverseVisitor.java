@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
@@ -25,19 +26,20 @@ import org.apache.calcite.sql.util.SqlBasicVisitor.ArgHandler;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-public class MySqlVisitorImpl<R> implements SqlVisitor<R>, ArgHandler<R> {
+public class SqlTreeReverseVisitor<R> implements SqlVisitor<R>, ArgHandler<R> {
     private static final List<String> InterestingOperators = new ArrayList<String>(
             Arrays.asList("count", "avg", "min", "max", "sum"));
     public List<String[]>             identifiers          = new ArrayList<>();
     Multimap<String, String>          aliasMap             = HashMultimap.create();
     Multimap<String, String>          functionsMap         = HashMultimap.create();
+    private Stack<String> lastVisited = new Stack<>();
     // private SqlSimpleNode node;
     SqlBasicVisitor.ArgHandler<R>     argHandler           = SqlBasicVisitor.ArgHandlerImpl.instance();
     // private final SqlSimpleNode root;
     // SqlSimpleNode presentNode;
     // List<SqlQueryMeta> qMeta;
 
-    public MySqlVisitorImpl() {
+    public SqlTreeReverseVisitor() {
         // root = new SqlSimpleNode();
         // presentNode = root;
         // qMeta = new ArrayList<>();
@@ -45,7 +47,6 @@ public class MySqlVisitorImpl<R> implements SqlVisitor<R>, ArgHandler<R> {
     }
 
     @Override
-    // 1rst call
     public R visit(SqlCall call) {
         SqlOperator op = call.getOperator();
 
@@ -60,6 +61,7 @@ public class MySqlVisitorImpl<R> implements SqlVisitor<R>, ArgHandler<R> {
             // SqlSimpleNode leftNode = new SqlSimpleNode();
             // presentNode.setLeftNode();
         }
+        op.acceptCall(this, call);
         System.out.println("Operator " + op.getName());
         if (op.getName().equals("AS"))
             aliasMap.put(call.getOperandList().get(1).toString(), call.getOperandList().get(0).toString());
@@ -68,10 +70,13 @@ public class MySqlVisitorImpl<R> implements SqlVisitor<R>, ArgHandler<R> {
             if (InterestingOperators.contains(opString.toLowerCase())) {
                 // functionsMap.put(op, value)
                 functionsMap.put(opString,call.getOperandList().get(0).toString());
-             
+                //lastVisited.peek()
+                //we need to create a structure to keep in whitch table and operator this functions is 
+                //applied
             }
         }
-        return op.acceptCall(this, call);
+        return null;
+        //return op.acceptCall(this, call);
     }
 
     @Override
@@ -97,15 +102,16 @@ public class MySqlVisitorImpl<R> implements SqlVisitor<R>, ArgHandler<R> {
         if (id.isSimple()) {
             System.out.println("Simple " + id.getSimple());
             identifiers.add(new String[] { id.getSimple() });
-
+            lastVisited.push(id.getSimple());
         } else if (id.isStar()) {
-
             identifiers.add(new String[] { "*" });
+            lastVisited.push("*");
         } else {
             System.out.println(id.names);
             identifiers.add(new String[] { id.names.get(0), id.names.get(1) });
-
+            lastVisited.push(id.toString());
         }
+        
         return (R) id;
     }
 
