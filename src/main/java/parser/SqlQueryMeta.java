@@ -16,207 +16,235 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 public class SqlQueryMeta {
-	private static Logger log = LoggerFactory.getLogger(SqlQueryMeta.class);
-	private final SqlSelect call;
-	private boolean hasGroupBy;
-	private boolean hasOrderBy;
-	private boolean hasWhere;
-	private boolean hasHaving;
+    private static Logger            log          = LoggerFactory.getLogger(SqlQueryMeta.class);
+    private static final String[]    functions    = { "count", "avg", "min", "max" };
+    private final SqlSelect          call;
+    private boolean                  hasGroupBy;
+    private boolean                  hasOrderBy;
+    private boolean                  hasWhere;
+    private boolean                  hasHaving;
 
-	private SqlNode from;
-	private SqlNode where;
-	private SqlNodeList select;
-	// private
-	private SqlNodeList orderby;
-	private SqlNodeList groupby;
+    private SqlNode                  from;
+    private SqlNode                  where;
+    private SqlNodeList              select;
+    // private
+    private SqlNodeList              orderby;
+    private SqlNodeList              groupby;
 
-	public List<String[]> selectIdentifiers;
-	public List<String[]> whereIdentifiers;
-	public List<String[]> groupByIdentifiers;
+    public List<String[]>            selectIdentifiers;
+    public List<String[]>            whereIdentifiers;
+    public List<String[]>            groupByIdentifiers;
 
-	private ArrayList<String> fromTables;
-	// private SqlSimpleNode selectList;
+    private ArrayList<String>        fromTables;
 
-	public SqlQueryMeta(SqlSelect call) {
-		this.call = call;
-		selectIdentifiers = new ArrayList<>();
-		hasOrderBy = ((SqlSelect) call).hasOrderBy(); // getGroup();
-		hasWhere = ((SqlSelect) call).hasWhere();
-		hasGroupBy = (((SqlSelect) call).getGroup() == null) ? false : true;
-		hasHaving = (((SqlSelect) call).getHaving() == null) ? false : true;
+    private Multimap<String, String> aliasMap     = HashMultimap.create();
+    private Multimap<String, String> functionsMap = HashMultimap.create();
 
-		from = ((SqlSelect) call).getFrom();
-		where = ((SqlSelect) call).getWhere();
-		select = ((SqlSelect) call).getSelectList();
-		orderby = ((SqlSelect) call).getOrderList();
-		groupby = ((SqlSelect) call).getGroup();
+    // private SqlSimpleNode selectList;
 
-		fromTables = new ArrayList<>();
-		if (this.from instanceof SqlJoin) {
-			analyzeFrom((SqlJoin) this.from);
-		} else if (this.from instanceof SqlIdentifier) {
-			fromTables.add(((SqlIdentifier) from).getSimple());
-		}
+    public SqlQueryMeta(SqlSelect call) {
+        this.call = call;
+        selectIdentifiers = new ArrayList<>();
+        hasOrderBy = ((SqlSelect) call).hasOrderBy(); // getGroup();
+        hasWhere = ((SqlSelect) call).hasWhere();
+        hasGroupBy = (((SqlSelect) call).getGroup() == null) ? false : true;
+        hasHaving = (((SqlSelect) call).getHaving() == null) ? false : true;
 
-		// selectList = new SqlSimpleNode();
-		// selectList.setOperator(operator);
+        from = ((SqlSelect) call).getFrom();
+        where = ((SqlSelect) call).getWhere();
+        select = ((SqlSelect) call).getSelectList();
+        orderby = ((SqlSelect) call).getOrderList();
+        groupby = ((SqlSelect) call).getGroup();
 
-	}
+        fromTables = new ArrayList<>();
+        if (this.from instanceof SqlJoin) {
+            analyzeFrom((SqlJoin) this.from);
+        } else if (this.from instanceof SqlIdentifier) {
+            fromTables.add(((SqlIdentifier) from).getSimple());
+        }
 
-	/**
-	 * For each table participating in the sql statement, find its participating fields and export them to a String[][] table.
-	 * Each row of this table corresponds to the table in use and afterwards its participating fields
-	 * @return 
-	 * 
-	 */
-	public Multimap<String, String> findTableParticipatingIdentifiers(List<String[]> clause){
-		
-		Multimap<String, String> filteredData = HashMultimap.create();
-//		for(String[] row : whereIdentifiers) filteredData.put(row[0], row[1]);
-		for(String[] row : clause) {
-			if(row.length>1) // everything contained here is a function such as (count avg etc)
-			filteredData.put(row[0], row[1]);}	
-		
-		log.info("lets hope its not dead");
-		return filteredData;
-	}
+        // classify the
+        // selectList = new SqlSimpleNode();
+        // selectList.setOperator(operator);
 
-	public void createDFLStatement(String tableName, List<String> tableIdentifiers) {
-		log.info("adwdaw");
-		log.info("adwdaw");
-	}
+    }
 
-	public void analyzeFrom(SqlJoin from) {
-		// SqlJoin fr = (SqlJoin) from;
-		// String t = fr.getJoinType().name();
+    /**
+     * For each table participating in the sql statement, find its participating
+     * fields and export them to a String[][] table. Each row of this table
+     * corresponds to the table in use and afterwards its participating fields
+     * 
+     * @return
+     * 
+     */
+    public Multimap<String, String> findTableParticipatingIdentifiers(List<String[]> clause) {
 
-		if (from.getLeft() instanceof SqlIdentifier) {
-			fromTables.add(((SqlIdentifier) from.getLeft()).getSimple());
-			fromTables.add(((SqlIdentifier) from.getRight()).getSimple());
-			return;
-		}
-		analyzeFrom((SqlJoin) from.getLeft());
-		fromTables.add(((SqlIdentifier) from.getRight()).getSimple());
-	}
+        Multimap<String, String> filteredData = HashMultimap.create();
+        // for(String[] row : whereIdentifiers) filteredData.put(row[0],
+        // row[1]);
+        for (String[] row : clause) {
+            if (row.length > 1) // everything contained here is a function such
+                                // as (count avg etc)
+                filteredData.put(row[0], row[1]);
+        }
 
-	public void findUniqueTableRows() {
+        log.info("lets hope its not dead");
+        return filteredData;
+    }
 
-	}
+    public void createDFLStatement(String tableName, List<String> tableIdentifiers) {
+        log.info("adwdaw");
+        log.info("adwdaw");
+    }
 
-	public List<String[]> getWhereIdentifiers() {
-		return whereIdentifiers;
-	}
+    public void analyzeFrom(SqlJoin from) {
+        // SqlJoin fr = (SqlJoin) from;
+        // String t = fr.getJoinType().name();
 
-	public void setWhereIdentifiers(List<String[]> whereIdentifiers) {
-		this.whereIdentifiers = whereIdentifiers;
-	}
+        if (from.getLeft() instanceof SqlIdentifier) {
+            fromTables.add(((SqlIdentifier) from.getLeft()).getSimple());
+            fromTables.add(((SqlIdentifier) from.getRight()).getSimple());
+            return;
+        }
+        analyzeFrom((SqlJoin) from.getLeft());
+        fromTables.add(((SqlIdentifier) from.getRight()).getSimple());
+    }
 
-	public List<String[]> getSelectIdentifiers() {
-		return selectIdentifiers;
-	}
+    public void findUniqueTableRows() {
 
-	public void setSelectIdentifiers(List<String[]> selectIdentifiers) {
-		this.selectIdentifiers = selectIdentifiers;
-	}
+    }
 
-	// public SqlSimpleNode getSelectList() {
-	// return selectList;
-	// }
-	//
-	// public void setSelectList(SqlSimpleNode selectList) {
-	// this.selectList = selectList;
-	// }
+    public List<String[]> getWhereIdentifiers() {
+        return whereIdentifiers;
+    }
 
-	// mundane
-	public boolean isHasGroupBy() {
-		return hasGroupBy;
-	}
+    public void setWhereIdentifiers(List<String[]> whereIdentifiers) {
+        this.whereIdentifiers = whereIdentifiers;
+    }
 
-	public void setHasGroupBy(boolean hasGroupBy) {
-		this.hasGroupBy = hasGroupBy;
-	}
+    public List<String[]> getSelectIdentifiers() {
+        return selectIdentifiers;
+    }
 
-	public boolean isHasOrderBy() {
-		return hasOrderBy;
-	}
+    public void setSelectIdentifiers(List<String[]> selectIdentifiers) {
+        this.selectIdentifiers = selectIdentifiers;
+    }
 
-	public void setHasOrderBy(boolean hasOrderBy) {
-		this.hasOrderBy = hasOrderBy;
-	}
+    // public SqlSimpleNode getSelectList() {
+    // return selectList;
+    // }
+    //
+    // public void setSelectList(SqlSimpleNode selectList) {
+    // this.selectList = selectList;
+    // }
 
-	public boolean isHasWhere() {
-		return hasWhere;
-	}
+    // mundane
+    public boolean isHasGroupBy() {
+        return hasGroupBy;
+    }
 
-	public void setHasWhere(boolean hasWhere) {
-		this.hasWhere = hasWhere;
-	}
+    public void setHasGroupBy(boolean hasGroupBy) {
+        this.hasGroupBy = hasGroupBy;
+    }
 
-	public boolean isHasHaving() {
-		return hasHaving;
-	}
+    public boolean isHasOrderBy() {
+        return hasOrderBy;
+    }
 
-	public void setHasHaving(boolean hasHaving) {
-		this.hasHaving = hasHaving;
-	}
+    public void setHasOrderBy(boolean hasOrderBy) {
+        this.hasOrderBy = hasOrderBy;
+    }
 
-	public SqlNode getFrom() {
-		return from;
-	}
+    public boolean isHasWhere() {
+        return hasWhere;
+    }
 
-	public void setFrom(SqlNode from) {
-		this.from = from;
-	}
+    public void setHasWhere(boolean hasWhere) {
+        this.hasWhere = hasWhere;
+    }
 
-	public SqlNode getWhere() {
-		return where;
-	}
+    public boolean isHasHaving() {
+        return hasHaving;
+    }
 
-	public void setWhere(SqlNode where) {
-		this.where = where;
-	}
+    public void setHasHaving(boolean hasHaving) {
+        this.hasHaving = hasHaving;
+    }
 
-	public SqlNodeList getSelect() {
-		return select;
-	}
+    public SqlNode getFrom() {
+        return from;
+    }
 
-	public void setSelect(SqlNodeList select) {
-		this.select = select;
-	}
+    public void setFrom(SqlNode from) {
+        this.from = from;
+    }
 
-	public SqlNodeList getOrderby() {
-		return orderby;
-	}
+    public SqlNode getWhere() {
+        return where;
+    }
 
-	public void setOrderby(SqlNodeList orderby) {
-		this.orderby = orderby;
-	}
+    public void setWhere(SqlNode where) {
+        this.where = where;
+    }
 
-	public SqlNodeList getGroupby() {
-		return groupby;
-	}
+    public SqlNodeList getSelect() {
+        return select;
+    }
 
-	public void setGroupby(SqlNodeList groupby) {
-		this.groupby = groupby;
-	}
+    public void setSelect(SqlNodeList select) {
+        this.select = select;
+    }
 
-	public ArrayList<String> getFromTables() {
-		return fromTables;
-	}
+    public SqlNodeList getOrderby() {
+        return orderby;
+    }
 
-	public void setFromTables(ArrayList<String> fromTables) {
-		this.fromTables = fromTables;
-	}
+    public void setOrderby(SqlNodeList orderby) {
+        this.orderby = orderby;
+    }
 
-	public SqlSelect getCall() {
-		return call;
-	}
+    public SqlNodeList getGroupby() {
+        return groupby;
+    }
 
-	public List<String[]> getGroupByIdentifiers() {
-		return groupByIdentifiers;
-	}
+    public void setGroupby(SqlNodeList groupby) {
+        this.groupby = groupby;
+    }
 
-	public void setGroupByIdentifiers(List<String[]> groupByIdentifiers) {
-		this.groupByIdentifiers = groupByIdentifiers;
-	}
+    public ArrayList<String> getFromTables() {
+        return fromTables;
+    }
+
+    public void setFromTables(ArrayList<String> fromTables) {
+        this.fromTables = fromTables;
+    }
+
+    public SqlSelect getCall() {
+        return call;
+    }
+
+    public List<String[]> getGroupByIdentifiers() {
+        return groupByIdentifiers;
+    }
+
+    public void setGroupByIdentifiers(List<String[]> groupByIdentifiers) {
+        this.groupByIdentifiers = groupByIdentifiers;
+    }
+
+    public Multimap<String, String> getAliasMap() {
+        return aliasMap;
+    }
+
+    public void setAliasMap(Multimap<String, String> aliasMap) {
+        this.aliasMap = aliasMap;
+    }
+
+    public Multimap<String, String> getFunctionsMap() {
+        return functionsMap;
+    }
+
+    public void setFunctionsMap(Multimap<String, String> functionsMap) {
+        this.functionsMap = functionsMap;
+    }
+
 }
