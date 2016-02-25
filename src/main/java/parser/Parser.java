@@ -91,38 +91,46 @@ public class Parser {
         String s;
 
         // SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
-        s = "select distinct count(A.id) as \"count\", count(*) as total from A , B, C, D where A.id=B.id and C.name=B.name ";
+        s = "select distinct count(A.id) as \"count\", count(A.key) , sum(A.key), avg(A.id) , count(*) as total, count(B.id) as \"countB\"  from A , B, C, D where A.id=B.id and C.name=B.name ";
 
 //        s = "select distinct count(A.id) as \"count\", C.salary as \"sal\",  C.name as \"employee\", count(*) as total from A , B, C, D where A.id=B.id and C.name=B.name "
 //                + "and "
 //                + "C.age<B.age or C.age<>A.age and D.name=B.name  group by A.id , C.name ";
         // and + "C.age in (Select * from B where B.name='Jim')
-//        s = "select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price,"
-//                + " sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, "
-//                + "avg(l_quantity) as avg_qty,  avg(l_extendedprice) as avg_price, avg(l_discount) as avg_disc, count(*) "
-//                + "as count_order from lineitem where l_shipdate <= '1998-12-01' group by l_returnflag, l_linestatus ";
-//        String end = "order by l_returnflag, l_linestatus";
+        s = "select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price,"
+                + " sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, "
+                + "avg(l_quantity) as avg_qty,  avg(l_extendedprice) as avg_price, avg(l_discount) as avg_disc, count(*) "
+                + "as count_order from lineitem where l_shipdate <= '1998-12-01' group by l_returnflag, l_linestatus ";
+        String end = "order by l_returnflag, l_linestatus";
         SqlNode node = parser.parseQuery(s);
-        SqlTreeReverseVisitor<SqlNodeList> insperctorB = new SqlTreeReverseVisitor<>();
+        SqlTreeReverseVisitor<SqlNodeList> insperctorR = new SqlTreeReverseVisitor<>();
+        SqlTreeVisitor<SqlNodeList> insperctorB = new SqlTreeVisitor<>();
         // MySqlVisitorImpl has a list of identifiers. When applied on an
         // sql part i.e. say select statement, he returns the
         // list of identifiers contained.
         // ORDER BY is FUCKING DIFFERENT
         SqlQueryMeta query = new SqlQueryMeta((SqlSelect) node);
 
-        SqlNode ps = query.getSelect().accept(insperctorB);
+        query.getSelect().accept(insperctorB);
         query.setSelectIdentifiers(insperctorB.identifiers);
         query.setAliasMap(insperctorB.aliasMap);
-        query.setFunctionsMap(insperctorB.functionsMap);
         
-        insperctorB = new SqlTreeReverseVisitor<>();
+        
+        insperctorB = new SqlTreeVisitor<>();
         query.getWhere().accept(insperctorB);
         query.setWhereIdentifiers(insperctorB.identifiers);
-
-        insperctorB = new SqlTreeReverseVisitor<>();
+        //after having the identifiers lets keep them for our next run with the
+        insperctorR.setIdentifiers(insperctorB.identifiers);
+        insperctorR.setTables(query.findTableParticipatingIdentifiers(query.getSelectIdentifiers()));
+        query.getSelect().accept(insperctorR);
+        
+        query.setFunctionsMapPerTable(insperctorR.getfunctionsToTables());
+        insperctorB = new SqlTreeVisitor<>();
         query.getGroupby().accept(insperctorB);
         query.setGroupByIdentifiers(insperctorB.identifiers);
 
+        
+        
         // //ORDER BY is FUCKING DIFFERENT
         // insperctorB = new MySqlVisitorImpl<>();
         // query.getOrderby().accept(insperctorB);
@@ -130,6 +138,8 @@ public class Parser {
         // Start Specifying set of Unique tables in order to start making
         // the sql batch call
 
+        
+        
         log.debug("Start classifying tables ");
         Path path = Paths.get("UDF_Statement.sql");
 

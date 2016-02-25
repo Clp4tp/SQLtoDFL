@@ -39,7 +39,7 @@ public class SqlQueryMeta {
     private ArrayList<String>        fromTables;
 
     private Multimap<String, String> aliasMap     = HashMultimap.create();
-    private Multimap<String, String> functionsMap = HashMultimap.create();
+    private Multimap<String, Multimap<String,String>> functionsMapPerTable = HashMultimap.create();
 
     // private SqlSimpleNode selectList;
 
@@ -240,12 +240,12 @@ public class SqlQueryMeta {
         this.aliasMap = aliasMap;
     }
 
-    public Multimap<String, String> getFunctionsMap() {
-        return functionsMap;
+    public Multimap<String, Multimap<String, String>> getFunctionsMapPerTable() {
+        return functionsMapPerTable;
     }
 
-    public void setFunctionsMap(Multimap<String, String> functionsMap) {
-        this.functionsMap = functionsMap;
+    public void setFunctionsMapPerTable(Multimap<String, Multimap<String, String>> functionsMap) {
+        this.functionsMapPerTable = functionsMap;
     }
 
 }

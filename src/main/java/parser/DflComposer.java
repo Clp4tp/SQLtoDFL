@@ -25,6 +25,7 @@ public final class DflComposer {
         Multimap<String, String> selectMap = query.findTableParticipatingIdentifiers(query.getSelectIdentifiers());
         Multimap<String, String> whereMap = query.findTableParticipatingIdentifiers(query.getWhereIdentifiers());
         String dfl = "";
+        
         for (String table : query.getFromTables()) {
 
             String dflStmt = "distributed create table temp" + table + " to " + noPartitions + " on " + partitionAttr
