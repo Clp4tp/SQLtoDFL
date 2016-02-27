@@ -1,0 +1,7 @@
+distributed create temporary table split to 1 on id as
+select * from koko;   
+
+distributed create table results as 
+select count(split.id) as countPerson
+from split
+where  split.age>100;

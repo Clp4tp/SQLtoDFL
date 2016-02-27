@@ -1,0 +1,10 @@
+distributed create temporary table splitPersony to 1 on id as 
+select * from Person;   
+
+distributed create temporary table splitEmployeey to 1 on id as 
+select * from Employee;   
+
+distributed create table r as 
+select count(splitPersony.id) as countPerson
+from splitPersony, splitEmployeey
+where splitPersony.name = splitEmployeey.name and splitPersony.age>100;

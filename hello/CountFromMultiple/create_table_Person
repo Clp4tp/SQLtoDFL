@@ -1,0 +1,1 @@
+exaquery 'db:/home/jim/exareme/bin/hello/CountFromMultiple/' distributed create table per_part to 3 on id as external select  cast(c1 as int) as id,    cast(c2 as text) as name,  cast(c3 as int) as age from (file '/home/jim/exareme/bin/hello/CountFromMultiple/hello' delimiter:| fast:1);

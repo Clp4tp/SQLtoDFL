@@ -1,0 +1,8 @@
+distributed create temporary table split to 3 on id as
+select * from per_part;   
+
+distributed create table results as 
+select count(split.id) as countPerson
+from split
+where  split.age>100;
+

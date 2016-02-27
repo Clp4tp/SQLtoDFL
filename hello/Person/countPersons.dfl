@@ -1,0 +1,3 @@
+distributed create table countPerson_split to 3 on id as 
+select * from Person;   
+

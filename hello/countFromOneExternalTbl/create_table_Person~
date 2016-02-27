@@ -1,0 +1,2 @@
+exaquery 'db:/home/jim/exareme/bin/hello/Person/' distributed create table Person to 3 on id as external select  cast(c1 as int) as id,    cast(c2 as text) as name,  cast(c3 as int) as age 
+from (file '/home/jim/exareme/bin/hello/Person/hello' delimiter:| fast:1);
