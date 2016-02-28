@@ -32,15 +32,16 @@ public final class DflComposer {
 
 	private static Logger log = LoggerFactory.getLogger(DflComposer.class);
 
-	public static void writeQueryToFile(Path path, SqlQueryMeta query, int noPartitions, String partitionAttr) {
+	public static String writeQueryToFile(Path path, SqlQueryMeta query, int noPartitions, String partitionAttr, String resultTable) {
 		// TODO
 		// where identifiers dont keep the literals
+		
 		Multimap<String, String> selectMap = query.findTableParticipatingIdentifiers(query.getSelectIdentifiers());
 		Multimap<String, String> whereMap = query.findTableParticipatingIdentifiers(query.getWhereIdentifiers());
 		String dfl = "";
-		HashMap<String,String> aliasedTables = new HashMap<>();
+		HashMap<String, String> aliasedTables = new HashMap<>();
 		for (String table : query.getFromTables()) {
-			aliasedTables.put(table, "temp"+table);
+			aliasedTables.put(table, "temp" + table);
 			String dflStmt = "distributed create temporary table temp" + table + " to " + noPartitions + " on "
 					+ partitionAttr + " as \n";
 			selectMap.putAll(whereMap);
@@ -54,6 +55,38 @@ public final class DflComposer {
 		// create the end product using
 		// 1. alias and functions
 		// 2. any join conditions
+		
+		resultTable = resultTable.length()==0 ? "result" : resultTable;
+		dfl += "distributed create table " +resultTable + " as \n"; //TODO missing externat or partition value
+		dfl += getCombinedDflSelectStmt(query);
+		dfl += "from " + prettyPrint(aliasedTables.values().toString()) + "\n";
+		
+		dfl += "where ";
+		
+			String[] s = prettyPrint(query.getWhere().toString()).split("\\s+");
+			for (String subs : s) {
+				log.info(s.toString());
+				String[] any = subs.split("\\.");
+				for (String a:  any){
+					if(aliasedTables.containsKey(a)){
+						dfl+= aliasedTables.get(a)+".";
+					}			
+					else dfl+= a+ " ";
+				
+				}
+			}
+		
+
+		try (BufferedWriter writer = Files.newBufferedWriter(path, charset)) {
+			writer.write(dfl, 0, dfl.length());
+		} catch (IOException x) {
+			log.error("Exception {}", x.getMessage());
+		}
+		return dfl;
+	}
+
+	
+	private static String getCombinedDflSelectStmt( SqlQueryMeta query){
 		Multimap<String, Multimap<String, String>> functionsMapPerTable = query.getFunctionsMapPerTable();
 		Multimap<String, String> aliasMap = query.getAliasMap();
 		String stmt = "select ";
@@ -82,19 +115,9 @@ public final class DflComposer {
 																	// external
 																	// of sth
 																	// else here
-
-		dfl += stmt;
-		dfl += "from " + prettyPrint(aliasedTables.values().toString()) + "\n";
-		dfl += "where " + prettyPrint(query.getWhere().toString());
-
-		try (BufferedWriter writer = Files.newBufferedWriter(path, charset)) {
-			writer.write(dfl, 0, dfl.length());
-		} catch (IOException x) {
-			log.error("Exception {}", x.getMessage());
-		}
-
+		return stmt;											
 	}
-
+	
 	private static String prettyPrint(String s) {
 
 		return new String(s.replace("[", "").replace("]", "").replace("`", ""));

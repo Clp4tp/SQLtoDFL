@@ -14,7 +14,7 @@ import parser.Parser;
 public class ParserTest {
     private static Logger log = LoggerFactory.getLogger(ParserTest.class);
 
-    @Test
+    //@Test
     public void testQueryParserCase() {
 
         String s = "select distinct count(A.id) as \"count\", C.salary,  C.name from A, B, C, D where A.id=B.id and C.name=B.name and "
@@ -40,6 +40,20 @@ public class ParserTest {
         String expected = node.toString().replace("\n", " ").replace(" ", "").trim();
 //        String actual = assertEquals(node.toString().replace("\n", " ").replace(" ", "").trim(),
 //                ss.replace(" ", "").trim());
+    }
+    
+    
+    @Test
+    public void testQuerySelect_case_one(){
+    	
+    	String query  = "select count(Employee.id) as total, sum(Employee.salary) as totalCost "+
+    					"from Employee, Director "+
+    					"where Employee.id=Director.id and Employee.salary>1500";
+    	
+    
+    	Parser parser = new Parser();
+    	System.out.println(parser.processQuery(query));
+    	
     }
 
 }

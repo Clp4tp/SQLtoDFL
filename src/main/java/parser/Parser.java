@@ -102,31 +102,34 @@ public class Parser {
 		// C.name ";
 		// and + "C.age in (Select * from B where B.name='Jim')
 		
-//		 s = "select " 
-////		 +"l_returnflag, l_linestatus, sum(l_quantity) as sum_qty,"
-////		 + " sum(l_extendedprice) as sum_base_price,"
-//		 + " sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, "
-////		 + " sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, "
-////		 + " avg(l_quantity) as avg_qty, avg(l_extendedprice) as avg_price,"
-//		 + " avg(l_discount) as avg_disc, count(*)  as count_order "
-//		 + " from lineitem " 
-//		 + " where l_shipdate <= '1998-12-01' "
-//		 + " group by l_returnflag, l_linestatus ";
+		 s = "select " 
+//		 +"l_returnflag, l_linestatus, sum(l_quantity) as sum_qty,"
+//		 + " sum(l_extendedprice) as sum_base_price,"
+		 + " sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, "
+//		 + " sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, "
+//		 + " avg(l_quantity) as avg_qty, avg(l_extendedprice) as avg_price,"
+		 + " avg(l_discount) as avg_disc, count(*)  as count_order "
+		 + " from lineitem " 
+		 + " where l_shipdate <= '1998-12-01' "
+		 + " group by l_returnflag, l_linestatus ";
 		 
 		// String end = "order by l_returnflag, l_linestatus";
-		SqlNode node = parser.parseQuery(s);
+		parser.processQuery(s);
+		 
+
+	}
+	public String processQuery(String expr){
+		
+		 SqlNode node = this.parseQuery(expr);
 		SqlTreeReverseVisitor<SqlNodeList> insperctorR = new SqlTreeReverseVisitor<>();
 		SqlTreeVisitor<SqlNodeList> insperctorB = new SqlTreeVisitor<>();
 		// MySqlVisitorImpl has a list of identifiers. When applied on an
 		// sql part i.e. say select statement, he returns the
 		// list of identifiers contained.
 		// ORDER BY is FUCKING DIFFERENT
-
 		SqlQueryMeta query = new SqlQueryMeta((SqlSelect) node);
-
 		query.getSelect().accept(insperctorB);
 		query.setSelectIdentifiers(insperctorB.identifiers);
-
 		insperctorB = new SqlTreeVisitor<>();
 		query.getWhere().accept(insperctorB);
 		query.setWhereIdentifiers(insperctorB.identifiers);
@@ -135,7 +138,6 @@ public class Parser {
 		insperctorR.setTables(query.findTableParticipatingIdentifiers(query.getSelectIdentifiers()));
 		query.getSelect().accept(insperctorR);
 		query.setAliasMap(insperctorR.aliasMap);
-
 		query.setFunctionsMapPerTable(insperctorR.getfunctionsToTables());
 		insperctorB = new SqlTreeVisitor<>();
 		// query.getGroupby().accept(insperctorB);
@@ -148,13 +150,14 @@ public class Parser {
 		// Start Specifying set of Unique tables in order to start making
 		// the sql batch call
 
+		
+		
 		log.debug("Start classifying tables ");
 		Path path = Paths.get("UDF_Statement.sql");
 
 		log.info("Any sql files will be placed under current directory " + path.toUri().toString());
-		DflComposer.writeQueryToFile(path, query, 10, "id");
-		log.info("sup");
-
+		String output = DflComposer.writeQueryToFile(path, query, 10, "id", "");
+		return output;
 	}
 
 	public SqlNode parseQuery(String s) {
