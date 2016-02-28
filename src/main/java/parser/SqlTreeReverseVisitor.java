@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 import org.apache.calcite.sql.SqlBasicCall;
@@ -19,6 +20,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
+import org.apache.calcite.sql.SqlSelectOperator;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.util.SqlBasicVisitor.ArgHandler;
@@ -37,6 +39,8 @@ public class SqlTreeReverseVisitor<R> implements SqlVisitor<R>, ArgHandler<R> {
 //	Multimap<String,String> w = HashMultimap.create();
 	Multimap<String, String> tables = HashMultimap.create();
 	Multimap<String, Multimap<String,String>> functionsToTables = HashMultimap.create();
+	
+//	Collect funstionsList = new ArrayList<>(); 
 	
 	public void setTables(Multimap<String, String> tables) {
 		this.tables = tables;
@@ -58,8 +62,8 @@ public class SqlTreeReverseVisitor<R> implements SqlVisitor<R>, ArgHandler<R> {
 
 	@Override
 	public R visit(SqlCall call) {
-		SqlOperator op = call.getOperator();
-
+		SqlOperator op =  call.getOperator();
+//		(SqlSelectOperator)op.
 		// SqlNode from =((SqlSelect) call).getFrom();
 		// presentNode.setOperator(op);
 		System.out.println(call.toString());
@@ -71,10 +75,11 @@ public class SqlTreeReverseVisitor<R> implements SqlVisitor<R>, ArgHandler<R> {
 			// SqlSimpleNode leftNode = new SqlSimpleNode();
 			// presentNode.setLeftNode();
 		}
+		
 		op.acceptCall(this, call);
 		System.out.println("Operator " + op.getName());
 		if (op.getName().equals("AS"))
-			aliasMap.put(call.getOperandList().get(1).toString(), call.getOperandList().get(0).toString());
+			aliasMap.put( call.getOperandList().get(0).toString().replace("`", ""), call.getOperandList().get(1).toString());
 		if (call instanceof SqlBasicCall) {
 			Multimap<String,String> map = HashMultimap.create();
 			String opString = ((SqlBasicCall) call).getOperator().toString();
@@ -82,12 +87,13 @@ public class SqlTreeReverseVisitor<R> implements SqlVisitor<R>, ArgHandler<R> {
 				// functionsMap.put(op, value)
 				String table = lastVisited.pop();
 				if (table.equals("*")) {
-					map.put(opString, call.getOperandList().get(0).toString());
+					
+					map.put(opString, call.getOperandList().get(0).toString().replace("`", ""));
 					functionsToTables.put(table, map);
 				} else {
 					
 //					functionsToTables.put(table, )
-					map.put(opString, call.getOperandList().get(0).toString());
+					map.put(opString, call.getOperandList().get(0).toString().replace("`", ""));
 					functionsToTables.put(table, map);
 					
 				}

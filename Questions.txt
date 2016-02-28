@@ -6,4 +6,4 @@ questions:
 	
 	3. The above will not work for avg(I suppose)
 	
-	
+	4 
