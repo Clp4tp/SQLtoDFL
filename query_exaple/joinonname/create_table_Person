@@ -1,0 +1,1 @@
+exaquery 'db:/home/jim/exareme/bin/hello/joinonname/' distributed create table actor to 3 on id as external select  cast(c1 as int) as id,    cast(c2 as text) as name,  cast(c3 as text) as lastname,  cast(c4 as int) as age from (file '/home/jim/exareme/bin/hello/joinonname/actor' delimiter:| fast:1);

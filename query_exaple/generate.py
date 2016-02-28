@@ -8,6 +8,6 @@ if __name__ == '__main__':
 	f = codecs.open(filename, 'w', 'utf-8')
 	rows =  int(raw_input("Give rows: "))
 	for i in range(0,rows): 	
-		f.write("%s|%s|%s|\n" %(i, randomword(5), i+40)) 
+		f.write("%s|%s|%s|%s|\n" %(i, randomword(7), randomword(10), i+40)) 
 	print "end"
 		

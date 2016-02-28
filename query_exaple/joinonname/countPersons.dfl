@@ -1,0 +1,9 @@
+distributed create temporary table split to 1 on id as
+select * from actorname;   
+
+distributed create table sumage to 1 on id as 
+select sum(split.age) as countPerson
+from split;
+
+
+
