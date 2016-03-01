@@ -8,6 +8,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,7 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.runtime.Resources.ExInst;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlDelete;
@@ -92,7 +94,7 @@ public class Parser {
 
 		// SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
 		s = "select distinct  count(A.id) as \"count\", count(*) as total, count(A.name) "
-				+ "from A , B  where A.id=B.id and A.name=B.name ";
+				+ "from A , B, C  where A.id=B.id  and A.name=B.name and C.name=B.name ";
 
 		// s = "select distinct count(A.id) as \"count\", C.salary as \"sal\",
 		// C.name as \"employee\", count(*) as total from A , B, C, D where
@@ -102,16 +104,16 @@ public class Parser {
 		// C.name ";
 		// and + "C.age in (Select * from B where B.name='Jim')
 		
-		 s = "select " 
-//		 +"l_returnflag, l_linestatus, sum(l_quantity) as sum_qty,"
-//		 + " sum(l_extendedprice) as sum_base_price,"
-		 + " sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, "
-//		 + " sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, "
-//		 + " avg(l_quantity) as avg_qty, avg(l_extendedprice) as avg_price,"
-		 + " avg(l_discount) as avg_disc, count(*)  as count_order "
-		 + " from lineitem " 
-		 + " where l_shipdate <= '1998-12-01' "
-		 + " group by l_returnflag, l_linestatus ";
+//		 s = "select " 
+////		 +"l_returnflag, l_linestatus, sum(l_quantity) as sum_qty,"
+////		 + " sum(l_extendedprice) as sum_base_price,"
+//		 + " sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, "
+////		 + " sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, "
+////		 + " avg(l_quantity) as avg_qty, avg(l_extendedprice) as avg_price,"
+//		 + " avg(l_discount) as avg_disc, count(*)  as count_order "
+//		 + " from lineitem " 
+//		 + " where l_shipdate <= '1998-12-01' "
+//		 + " group by l_returnflag, l_linestatus ";
 		 
 		// String end = "order by l_returnflag, l_linestatus";
 		parser.processQuery(s);
@@ -131,6 +133,7 @@ public class Parser {
 		query.getSelect().accept(insperctorB);
 		query.setSelectIdentifiers(insperctorB.identifiers);
 		insperctorB = new SqlTreeVisitor<>();
+		
 		query.getWhere().accept(insperctorB);
 		query.setWhereIdentifiers(insperctorB.identifiers);
 		// after having the identifiers lets keep them for our next run with the
@@ -142,19 +145,12 @@ public class Parser {
 		insperctorB = new SqlTreeVisitor<>();
 		// query.getGroupby().accept(insperctorB);
 		// query.setGroupByIdentifiers(insperctorB.identifiers);
-
 		// //ORDER BY is FUCKING DIFFERENT
-		// insperctorB = new MySqlVisitorImpl<>();
-		// query.getOrderby().accept(insperctorB);
-
-		// Start Specifying set of Unique tables in order to start making
-		// the sql batch call
-
-		
-		
+		JoinAttributesVisitor<SqlNodeList> joinAttrVisitor = new JoinAttributesVisitor<>();
+		query.getWhere().accept(joinAttrVisitor);
+		query.setJoinOperations(  joinAttrVisitor.joinOperations);
 		log.debug("Start classifying tables ");
 		Path path = Paths.get("UDF_Statement.sql");
-
 		log.info("Any sql files will be placed under current directory " + path.toUri().toString());
 		String output = DflComposer.writeQueryToFile(path, query, 10, "id", "");
 		return output;
