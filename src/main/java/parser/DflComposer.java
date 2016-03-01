@@ -46,6 +46,7 @@ public final class DflComposer {
 	Multimap<String, String> whereMap = query.findTableParticipatingIdentifiers(query.getWhereIdentifiers());
 	String dfl = "";
 	HashMap<String, String> aliasedTables = new HashMap<>();
+	
 	for (String table : query.getFromTables()) {
 	    aliasedTables.put(table, "temp" + table);
 	    String dflStmt = "distributed create temporary table temp" + table + " to " + noPartitions + " on "
@@ -71,9 +72,9 @@ public final class DflComposer {
 								     // value
 	// Multimap<String, String> whereMap =
 	// query.findTableParticipatingIdentifiers(query.getJoinOperations());
-	applyDirect(query);
-
-	dfl += getCombinedDflSelectStmt(query);
+	
+	String direct = applyDirect(query);
+	dfl += getCombinedDflSelectStmt(query) + (direct=="" ? "" : " as " + direct)  ;
 	dfl += "from " + prettyPrint(aliasedTables.values().toString()) + "\n";
 	dfl += "where ";
 	String[] s = prettyPrint(query.getWhere().toString()).split("\\s+");
@@ -112,11 +113,9 @@ public final class DflComposer {
 			stmt += " as " + prettyPrint(aliasMap.get(s).toString());
 		    }
 		}
-
 		stmt += ", ";
 	    }
 	}
-	// remove trailing comma
 	stmt = stmt.substring(0, stmt.lastIndexOf(',')) + " as \n";
 	return stmt;
     }
@@ -131,30 +130,19 @@ public final class DflComposer {
 	// find path connecting A-B-C...-N on any order on one attribute i.e the
 	// same attribute needs to be present to all nodes connecting them
 	// with join operator [ =, >=, <= ]
-	// for each table start
+	
 	List<JoinCondition> joins = new ArrayList<>();
 	for (SqlBasicCall call : query.getJoinOperations()) {
 	 joins.add(new JoinCondition(call));
 	}
-	
-	log.info("DIRECT JOIN DETECTED ON " + JoinCondition.findCycle(joins, query));
-	
-	return null;
-    }
-
-    public static Set<String> findDuplicates(List<String> listContainingDuplicates) {
-
-	final Set<String> setToReturn = new HashSet<String>();
-	final Set<String> cleanSet = new HashSet<String>();
-
-	for (String identifier : listContainingDuplicates) {
-	    if (!cleanSet.add(identifier)) {
-		setToReturn.add(identifier);
-	    }
+	String directJoin = JoinCondition.findCycle(joins, query);
+	if(directJoin!=""){
+		log.info("Direct JOIN detected on attributed " + directJoin);
 	}
-	return setToReturn;
+	return directJoin;
     }
 
+    
     private static String prettyPrint(String s) {
 	return new String(s.replace("[", "").replace("]", "").replace("`", ""));
 
