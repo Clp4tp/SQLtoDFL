@@ -1,6 +1,7 @@
 /target
 # Eclipse
 .classpath
+.checkstyle
 .project
 .settings/
 UDF_Statement.sql
