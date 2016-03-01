@@ -35,7 +35,6 @@ public class JoinAttributesVisitor<R> implements SqlVisitor<R> {
     @Override
     public R visit(SqlCall call) {
 	SqlOperator op = call.getOperator();
-	System.out.println(call.toString());
 	List<SqlNode> l = call.getOperandList();
 	if (call instanceof SqlBasicCall) {
 	    if (Operators.contains(op.toString())) {
@@ -43,14 +42,11 @@ public class JoinAttributesVisitor<R> implements SqlVisitor<R> {
 	    }
 	}
 	op.acceptCall(this, call);
-	System.out.println("Operator " + op.getName());
 	return null;
     }
 
     @Override
     public R visit(SqlLiteral literal) {
-
-        System.out.println("literal" + literal.toString());
         return null;
     }
 
@@ -68,14 +64,12 @@ public class JoinAttributesVisitor<R> implements SqlVisitor<R> {
     public R visit(SqlIdentifier id) {
         // TODO Auto-generated method stub
         if (id.isSimple()) {
-            System.out.println("Simple " + id.getSimple());
             identifiers.add(new String[] { id.getSimple() });
             lastVisited.push(id.getSimple());
         } else if (id.isStar()) {
             identifiers.add(new String[] { "*" });
             lastVisited.push("*");
         } else {
-            System.out.println(id.names);
             identifiers.add(new String[] { id.names.get(0), id.names.get(1) });
             lastVisited.push(id.toString());
         }
@@ -85,21 +79,18 @@ public class JoinAttributesVisitor<R> implements SqlVisitor<R> {
     @Override
     public R visit(SqlDataTypeSpec type) {
         // TODO Auto-generated method stub
-        System.out.println("dadw");
         return null;
     }
 
     @Override
     public R visit(SqlDynamicParam param) {
         // TODO Auto-generated method stub
-        System.out.println("dadaw");
         return null;
     }
 
     @Override
     public R visit(SqlIntervalQualifier intervalQualifier) {
         // TODO Auto-generated method stub
-        System.out.println("dadawdawdaw");
         return null;
     }
 

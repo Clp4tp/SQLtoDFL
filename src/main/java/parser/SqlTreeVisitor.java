@@ -34,28 +34,14 @@ public class SqlTreeVisitor<R> implements SqlVisitor<R> {
     @Override
     public R visit(SqlCall call) {
         SqlOperator op = call.getOperator();
-        // SqlNode from =((SqlSelect) call).getFrom();
-        // presentNode.setOperator(op);
-        System.out.println(call.toString());
-        boolean t = op.isDeterministic();
-        t = op.isAggregator();
-        t = op.isDynamicFunction();
-        List<SqlNode> l = call.getOperandList();
-        if (!l.isEmpty()) {
-            // SqlSimpleNode leftNode = new SqlSimpleNode();
-            // presentNode.setLeftNode();
-        }
-       
-        System.out.println("Operator " + op.getName());
+        //System.out.println(call.toString());
         if (op.getName().equals("AS"))
             aliasMap.put(call.getOperandList().get(1).toString(), call.getOperandList().get(0).toString());
         if (call instanceof SqlBasicCall) {
             String opString = ((SqlBasicCall) call).getOperator().toString();
             if (InterestingOperators.contains(opString.toLowerCase())) {
                 // functionsMap.put(op, value)
-
                 functionsMap.put(opString, call.getOperandList().get(0).toString());
-
             }
         }
          return op.acceptCall(this, call);
@@ -82,14 +68,12 @@ public class SqlTreeVisitor<R> implements SqlVisitor<R> {
     public R visit(SqlIdentifier id) {
         // TODO Auto-generated method stub
         if (id.isSimple()) {
-            System.out.println("Simple " + id.getSimple());
             identifiers.add(new String[] { id.getSimple() });
             lastVisited.push(id.getSimple());
         } else if (id.isStar()) {
             identifiers.add(new String[] { "*" });
             lastVisited.push("*");
         } else {
-            System.out.println(id.names);
             identifiers.add(new String[] { id.names.get(0), id.names.get(1) });
             lastVisited.push(id.toString());
         }
@@ -100,21 +84,18 @@ public class SqlTreeVisitor<R> implements SqlVisitor<R> {
     @Override
     public R visit(SqlDataTypeSpec type) {
         // TODO Auto-generated method stub
-        System.out.println("dadw");
         return null;
     }
 
     @Override
     public R visit(SqlDynamicParam param) {
         // TODO Auto-generated method stub
-        System.out.println("dadaw");
         return null;
     }
 
     @Override
     public R visit(SqlIntervalQualifier intervalQualifier) {
         // TODO Auto-generated method stub
-        System.out.println("dadawdawdaw");
         return null;
     }
 

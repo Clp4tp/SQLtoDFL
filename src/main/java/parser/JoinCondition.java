@@ -74,7 +74,7 @@ public class JoinCondition {
 				}
 			}
 		}
-		return null;
+		return "";
 	}
 
 }

@@ -79,7 +79,7 @@ public class Parser {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				log.error("Abrupty Terminated");
+				log.info("Terminated");
 			}
 		});
 		log.info("Shut Down Hook Attached.");

@@ -57,10 +57,7 @@ public class SqlTreeReverseVisitor<R> implements SqlVisitor<R> {
     @Override
     public R visit(SqlCall call) {
 	SqlOperator op = call.getOperator();
-	System.out.println(call.toString());
-	List<SqlNode> l = call.getOperandList();
 	op.acceptCall(this, call);
-	System.out.println("Operator " + op.getName());
 	if (op.getName().equals("AS"))
 	    aliasMap.put(call.getOperandList().get(0).toString().replace("`", ""),
 		    call.getOperandList().get(1).toString());
@@ -94,14 +91,12 @@ public class SqlTreeReverseVisitor<R> implements SqlVisitor<R> {
     @Override
     public R visit(SqlIdentifier id) {
 	if (id.isSimple()) {
-	    System.out.println("Simple " + id.getSimple());
 	    SqlIdentifier lastId = id.skipLast(1);
 	    if (!InterestingOperators.contains(id.getSimple()))
 		lastVisited.push(id.getSimple());
 	} else if (id.isStar()) {
 	    lastVisited.push("*");
 	} else {
-	    System.out.println(id.names);
 	    for (String name : id.names) {
 		if (!tables.get(name).isEmpty()) {
 		    lastVisited.push(name);
@@ -114,25 +109,21 @@ public class SqlTreeReverseVisitor<R> implements SqlVisitor<R> {
     @Override
     public R visit(SqlDataTypeSpec type) {
 	// TODO Auto-generated method stub
-	System.out.println("dadw");
 	return null;
     }
 
     @Override
     public R visit(SqlDynamicParam param) {
-	System.out.println("SqlDynamicParam");
 	return null;
     }
 
     @Override
     public R visit(SqlIntervalQualifier intervalQualifier) {
-	System.out.println("SqlIntervalQualifier");
 	return null;
     }
 
     @Override
     public R visit(SqlLiteral literal) {
-	System.out.println("SqlLiteral");
 	return null;
     }
 

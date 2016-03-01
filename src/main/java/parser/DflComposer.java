@@ -33,119 +33,121 @@ import com.google.common.collect.Multimap;
 
 public final class DflComposer {
 
-    private static Charset charset = Charset.forName("UTF-8");
+	private static Charset charset = Charset.forName("UTF-8");
 
-    private static Logger log = LoggerFactory.getLogger(DflComposer.class);
+	private static Logger log = LoggerFactory.getLogger(DflComposer.class);
 
-    public static String writeQueryToFile(Path path, SqlQueryMeta query, int noPartitions, String partitionAttr,
-	    String resultTable) {
-	// TODO
-	// where identifiers dont keep the literals
-
-	Multimap<String, String> selectMap = query.findTableParticipatingIdentifiers(query.getSelectIdentifiers());
-	Multimap<String, String> whereMap = query.findTableParticipatingIdentifiers(query.getWhereIdentifiers());
-	String dfl = "";
-	HashMap<String, String> aliasedTables = new HashMap<>();
-	
-	for (String table : query.getFromTables()) {
-	    aliasedTables.put(table, "temp" + table);
-	    String dflStmt = "distributed create temporary table temp" + table + " to " + noPartitions + " on "
-		    + partitionAttr + " as \n";
-	    selectMap.putAll(whereMap);
-	    String projection = (prettyPrint(selectMap.get(table).toString())).toLowerCase().length() == 0 ? "*"
-		    : (prettyPrint(selectMap.get(table).toString())).toLowerCase();
-
-	    String selectStmt = " select " + projection + " " + "from  " + table + "\n\n";
-	    dfl += dflStmt + selectStmt;
-	}
-
-	// create the end product using
-	// 1. alias and functions
-	// 2. any join conditions
-
-	resultTable = resultTable.length() == 0 ? "result" : resultTable;
-	dfl += "distributed create table " + resultTable + " as \n"; // TODO
-								     // missing
-								     // externat
-								     // or
-								     // partition
-								     // value
-	// Multimap<String, String> whereMap =
-	// query.findTableParticipatingIdentifiers(query.getJoinOperations());
-	
-	String direct = applyDirect(query);
-	dfl += getCombinedDflSelectStmt(query) + (direct=="" ? "" : " as " + direct)  ;
-	dfl += "from " + prettyPrint(aliasedTables.values().toString()) + "\n";
-	dfl += "where ";
-	String[] s = prettyPrint(query.getWhere().toString()).split("\\s+");
-	for (String subs : s) {
-	    log.info(s.toString());
-	    String[] any = subs.split("\\.");
-	    for (String a : any) {
-		if (aliasedTables.containsKey(a)) {
-		    dfl += aliasedTables.get(a) + ".";
-		} else
-		    dfl += a + " ";
-	    }
-	}
-	try (BufferedWriter writer = Files.newBufferedWriter(path, charset)) {
-	    writer.write(dfl, 0, dfl.length());
-	} catch (IOException x) {
-	    log.error("Exception {}", x.getMessage());
-	}
-	return dfl;
-    }
-
-    private static String getCombinedDflSelectStmt(SqlQueryMeta query) {
-	Multimap<String, Multimap<String, String>> functionsMapPerTable = query.getFunctionsMapPerTable();
-	Multimap<String, String> aliasMap = query.getAliasMap();
-	String stmt = "select ";
-
-	for (String key : functionsMapPerTable.keySet()) {
-	    Collection<Multimap<String, String>> map = functionsMapPerTable.get(key);
-	    for (Multimap<String, String> mmap : map) {
-		for (String function : mmap.keySet()) {
-		    Collection<String> l = mmap.keySet();
-		    String temp = key.equals("*") ? "" : "temp";
-		    stmt += function + "(" + temp + prettyPrint(mmap.get(function).toString()) + ")";
-		    String s = function + "(" + prettyPrint(mmap.get(function).toString()) + ")";
-		    if (aliasMap.containsKey(s)) {
-			stmt += " as " + prettyPrint(aliasMap.get(s).toString());
-		    }
+	public static String writeQueryToFile(Path path, SqlQueryMeta query, int noPartitions, String partitionAttr,
+			String resultTable) {
+		// TODO
+		// where identifiers dont keep the literals
+		String direct = applyDirect(query);
+		if (direct == "") {
+			partitionAttr = "id";
+		} else {
+			partitionAttr = direct;
 		}
-		stmt += ", ";
-	    }
+		Multimap<String, String> selectMap = query.findTableParticipatingIdentifiers(query.getSelectIdentifiers());
+		Multimap<String, String> whereMap = query.findTableParticipatingIdentifiers(query.getWhereIdentifiers());
+		String dfl = "";
+		HashMap<String, String> aliasedTables = new HashMap<>();
+
+		for (String table : query.getFromTables()) {
+			aliasedTables.put(table, "temp" + table);
+			String dflStmt = "distributed create temporary table temp" + table + " to " + noPartitions + " on "
+					+ partitionAttr + " as \n";
+			selectMap.putAll(whereMap);
+			String projection = (prettyPrint(selectMap.get(table).toString())).toLowerCase().length() == 0 ? "*"
+					: (prettyPrint(selectMap.get(table).toString())).toLowerCase();
+
+			String selectStmt = " select " + projection + " " + "from  " + table + "\n\n";
+			dfl += dflStmt + selectStmt;
+		}
+
+		// create the end product using
+		// 1. alias and functions
+		// 2. any join conditions
+
+		resultTable = resultTable.length() == 0 ? "result" : resultTable;
+		dfl += "distributed create table " + resultTable + " as " + (direct == "" ? "" : "external \n"); // TODO
+		// missing
+		// externat
+		// or
+		// partition
+		// value
+		// Multimap<String, String> whereMap =
+		// query.findTableParticipatingIdentifiers(query.getJoinOperations());
+
+		dfl += getCombinedDflSelectStmt(query);
+		dfl += "from " + prettyPrint(aliasedTables.values().toString()) + "\n";
+		dfl += "where ";
+		String[] s = prettyPrint(query.getWhere().toString()).split("\\s+");
+		for (String subs : s) {
+			String[] any = subs.split("\\.");
+			for (String a : any) {
+				if (aliasedTables.containsKey(a)) {
+					dfl += aliasedTables.get(a) + ".";
+				} else
+					dfl += a + " ";
+			}
+		}
+		try (BufferedWriter writer = Files.newBufferedWriter(path, charset)) {
+			writer.write(dfl, 0, dfl.length());
+		} catch (IOException x) {
+			log.error("Exception {}", x.getMessage());
+		}
+		return dfl;
 	}
-	stmt = stmt.substring(0, stmt.lastIndexOf(',')) + " as \n";
-	return stmt;
-    }
 
-    private static String applyDirect(SqlQueryMeta query) {
+	private static String getCombinedDflSelectStmt(SqlQueryMeta query) {
+		Multimap<String, Multimap<String, String>> functionsMapPerTable = query.getFunctionsMapPerTable();
+		Multimap<String, String> aliasMap = query.getAliasMap();
+		String stmt = "select ";
 
-	// We need to check if we have any joining attributes
-	// cases
-	// 1. One table shows up , use direct?
-	// 2. Two or more tables we need to find their partition attribute.
-	// WORKFLOW : from Tables : A, B, C, ... N represented as a graph
-	// find path connecting A-B-C...-N on any order on one attribute i.e the
-	// same attribute needs to be present to all nodes connecting them
-	// with join operator [ =, >=, <= ]
-	
-	List<JoinCondition> joins = new ArrayList<>();
-	for (SqlBasicCall call : query.getJoinOperations()) {
-	 joins.add(new JoinCondition(call));
+		for (String key : functionsMapPerTable.keySet()) {
+			Collection<Multimap<String, String>> map = functionsMapPerTable.get(key);
+			for (Multimap<String, String> mmap : map) {
+				for (String function : mmap.keySet()) {
+					Collection<String> l = mmap.keySet();
+					String temp = key.equals("*") ? "" : "temp";
+					stmt += function + "(" + temp + prettyPrint(mmap.get(function).toString()) + ")";
+					String s = function + "(" + prettyPrint(mmap.get(function).toString()) + ")";
+					if (aliasMap.containsKey(s)) {
+						stmt += " as " + prettyPrint(aliasMap.get(s).toString());
+					}
+				}
+				stmt += ", ";
+			}
+		}
+		stmt = stmt.substring(0, stmt.lastIndexOf(',')) + " as \n";
+		return stmt;
 	}
-	String directJoin = JoinCondition.findCycle(joins, query);
-	if(directJoin!=""){
-		log.info("Direct JOIN detected on attributed " + directJoin);
+
+	private static String applyDirect(SqlQueryMeta query) {
+
+		// We need to check if we have any joining attributes
+		// cases
+		// 1. One table shows up , use direct?
+		// 2. Two or more tables we need to find their partition attribute.
+		// WORKFLOW : from Tables : A, B, C, ... N represented as a graph
+		// find path connecting A-B-C...-N on any order on one attribute i.e the
+		// same attribute needs to be present to all nodes connecting them
+		// with join operator [ =, >=, <= ]
+
+		List<JoinCondition> joins = new ArrayList<>();
+		for (SqlBasicCall call : query.getJoinOperations()) {
+			joins.add(new JoinCondition(call));
+		}
+		String directJoin = JoinCondition.findCycle(joins, query);
+		if (directJoin != "") {
+			log.info("Direct JOIN detected on attributed " + directJoin);
+		}
+		return directJoin;
 	}
-	return directJoin;
-    }
 
-    
-    private static String prettyPrint(String s) {
-	return new String(s.replace("[", "").replace("]", "").replace("`", ""));
+	private static String prettyPrint(String s) {
+		return new String(s.replace("[", "").replace("]", "").replace("`", ""));
 
-    }
+	}
 
 }
