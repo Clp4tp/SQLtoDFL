@@ -36,10 +36,12 @@ public class SqlQueryMeta {
     private List<SqlBasicCall> joinOperations;
     private Multimap<String, String> aliasMap = HashMultimap.create();
     private Multimap<String, Multimap<String, String>> functionsMapPerTable = HashMultimap.create();
-
+    private List<List<String>> functionsToTables = new ArrayList<>();
     // private SqlSimpleNode selectList;
 
-    public SqlQueryMeta(SqlSelect call) {
+  
+
+	public SqlQueryMeta(SqlSelect call) {
 	this.call = call;
 	selectIdentifiers = new ArrayList<>();
 	hasOrderBy = ((SqlSelect) call).hasOrderBy(); // getGroup();
@@ -250,4 +252,11 @@ public class SqlQueryMeta {
 	return joinOperations;
     }
 
+    public List<List<String>> getFunctionsToTables() {
+  		return functionsToTables;
+  	}
+
+  	public void setFunctionsToTables(List<List<String>> functionsToTables) {
+  		this.functionsToTables = functionsToTables;
+  	}
 }

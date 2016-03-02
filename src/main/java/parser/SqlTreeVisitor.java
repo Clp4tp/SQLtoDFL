@@ -49,8 +49,6 @@ public class SqlTreeVisitor<R> implements SqlVisitor<R> {
 
     @Override
     public R visit(SqlLiteral literal) {
-
-        System.out.println("literal" + literal.toString());
         return null;
     }
 

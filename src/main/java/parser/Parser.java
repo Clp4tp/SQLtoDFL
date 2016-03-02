@@ -93,7 +93,7 @@ public class Parser {
 		String s;
 
 		// SqlSimpleParser simpleparser = new SqlSimpleParser("parser");
-		s = "select distinct  count(A.id) as \"count\", count(*) as total, count(A.name) "
+		s = "select distinct  count(A.id) as \"count\", count(*) as total, count(A.name), count(C.id) as Cbefirst "
 				+ "from A , B, C  where A.id=B.id  and A.name=B.name and C.name=B.name ";
 
 		// s = "select distinct count(A.id) as \"count\", C.salary as \"sal\",
@@ -120,6 +120,7 @@ public class Parser {
 		 
 
 	}
+
 	public String processQuery(String expr){
 		
 		 SqlNode node = this.parseQuery(expr);
@@ -141,7 +142,7 @@ public class Parser {
 		insperctorR.setTables(query.findTableParticipatingIdentifiers(query.getSelectIdentifiers()));
 		query.getSelect().accept(insperctorR);
 		query.setAliasMap(insperctorR.aliasMap);
-		query.setFunctionsMapPerTable(insperctorR.getfunctionsToTables());
+		query.setFunctionsToTables(insperctorR.functionsToTables);
 		insperctorB = new SqlTreeVisitor<>();
 		// query.getGroupby().accept(insperctorB);
 		// query.setGroupByIdentifiers(insperctorB.identifiers);
@@ -149,9 +150,7 @@ public class Parser {
 		JoinAttributesVisitor<SqlNodeList> joinAttrVisitor = new JoinAttributesVisitor<>();
 		query.getWhere().accept(joinAttrVisitor);
 		query.setJoinOperations(  joinAttrVisitor.joinOperations);
-		log.debug("Start classifying tables ");
 		Path path = Paths.get("UDF_Statement.sql");
-		log.info("Any sql files will be placed under current directory " + path.toUri().toString());
 		String output = DflComposer.writeQueryToFile(path, query, 10, "id", "");
 		return output;
 	}
@@ -161,7 +160,7 @@ public class Parser {
 		SqlNode node = null;
 		try {
 			node = p.parseStmt();
-			System.out.println("SQLParser :" + node.toString());
+//			System.out.println("SQLParser :" + node.toString());
 			org.apache.calcite.tools.Frameworks.ConfigBuilder configBuilder = Frameworks.newConfigBuilder();
 			FrameworkConfig fC = configBuilder.build();
 			Planner pl = Frameworks.getPlanner(fC);

@@ -24,6 +24,7 @@ import org.apache.calcite.sql.SqlSelectOperator;
 import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.fun.SqlHistogramAggFunction;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.commons.lang.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +40,8 @@ public final class DflComposer {
 
 	public static String writeQueryToFile(Path path, SqlQueryMeta query, int noPartitions, String partitionAttr,
 			String resultTable) {
-		// TODO
-		// where identifiers dont keep the literals
+		// TODO combined statement has to be partitioned to 1 -- REMEMBER
+		
 		String direct = applyDirect(query);
 		if (direct == "") {
 			partitionAttr = "id";
@@ -50,8 +51,20 @@ public final class DflComposer {
 		Multimap<String, String> selectMap = query.findTableParticipatingIdentifiers(query.getSelectIdentifiers());
 		Multimap<String, String> whereMap = query.findTableParticipatingIdentifiers(query.getWhereIdentifiers());
 		String dfl = "";
+		dfl += prettyPrint(query.getCall().toString().toLowerCase()) + ";\n\n";
 		HashMap<String, String> aliasedTables = new HashMap<>();
-
+		if (!query.getFromTables().isEmpty() && query.getFromTables().size() == 1) {
+			log.info("dwadaw");
+			for (String key : whereMap.keySet()) {
+				Collection<String> random = whereMap.get(key);
+				if (random.size() >= 1) {
+					Iterator<String> it = random.iterator();
+					if (it.hasNext()) {
+						partitionAttr = it.next();
+					}
+				}
+			}
+		}
 		for (String table : query.getFromTables()) {
 			aliasedTables.put(table, "temp" + table);
 			String dflStmt = "distributed create temporary table temp" + table + " to " + noPartitions + " on "
@@ -60,7 +73,7 @@ public final class DflComposer {
 			String projection = (prettyPrint(selectMap.get(table).toString())).toLowerCase().length() == 0 ? "*"
 					: (prettyPrint(selectMap.get(table).toString())).toLowerCase();
 
-			String selectStmt = " select " + projection + " " + "from  " + table + "\n\n";
+			String selectStmt = " select " + projection + " " + "from  " + table + ";\n\n";
 			dfl += dflStmt + selectStmt;
 		}
 
@@ -69,16 +82,9 @@ public final class DflComposer {
 		// 2. any join conditions
 
 		resultTable = resultTable.length() == 0 ? "result" : resultTable;
-		dfl += "distributed create table " + resultTable + " as " + (direct == "" ? "" : "external \n"); // TODO
-		// missing
-		// externat
-		// or
-		// partition
-		// value
-		// Multimap<String, String> whereMap =
-		// query.findTableParticipatingIdentifiers(query.getJoinOperations());
+		dfl += "distributed create table " + resultTable + " as " + (direct == "" ? "\n" : "external \n"); 
 
-		dfl += getCombinedDflSelectStmt(query);
+		dfl += getDflSelectStmt(query);// CombinedDflSelectStmt(query);
 		dfl += "from " + prettyPrint(aliasedTables.values().toString()) + "\n";
 		dfl += "where ";
 		String[] s = prettyPrint(query.getWhere().toString()).split("\\s+");
@@ -91,12 +97,15 @@ public final class DflComposer {
 					dfl += a + " ";
 			}
 		}
+		dfl += ";";
 		try (BufferedWriter writer = Files.newBufferedWriter(path, charset)) {
 			writer.write(dfl, 0, dfl.length());
 		} catch (IOException x) {
 			log.error("Exception {}", x.getMessage());
 		}
+
 		return dfl;
+
 	}
 
 	private static String getCombinedDflSelectStmt(SqlQueryMeta query) {
@@ -123,6 +132,50 @@ public final class DflComposer {
 		return stmt;
 	}
 
+	private static String getDflSelectStmt(SqlQueryMeta query) {
+		List<List<String>> functionsPerTable = query.getFunctionsToTables();
+		Multimap<String, String> aliasMap = query.getAliasMap();
+		String stmt = "select ";
+		if (functionsPerTable.size() > 0) {
+			for (List<String> list : functionsPerTable) {
+				if (list.size() < 2) {
+					throw new NotImplementedException("Found empty function");
+				}
+				String[] table_and_column = list.get(1).split("\\.");
+				String temp = null;
+				if (table_and_column[0] == "*") {
+					temp = "";
+				} else {
+					temp = "temp";
+				}
+				// String temp = key.equals("*") ? "" : "temp";
+				String operator = list.get(0) + "(" + temp + prettyPrint(list.get(1)) + ")";
+				stmt += operator;
+				if (aliasMap.containsKey(list.get(0) + "(" + list.get(1) + ")")) {
+					stmt += " as " + prettyPrint(aliasMap.get(list.get(0) + "(" + list.get(1) + ")").toString());
+				}
+				stmt += ", ";
+			}
+		} else if (query.getSelectIdentifiers().size() > 0) {
+			for (String[] list : query.getSelectIdentifiers()) {
+				if (list.length == 1) {
+					stmt += list[0];
+				} else {
+					stmt += "temp" + list[0] + "." + list[1];
+				}
+
+				// stmt=stmt.substring(0, stmt.lastIndexOf('.'));
+				stmt += ",";
+			}
+		} else {// append star
+			stmt += "* ";
+		}
+
+		if (stmt.contains(","))
+			stmt = stmt.substring(0, stmt.lastIndexOf(',')) + "  \n";
+		return stmt;
+	}
+
 	private static String applyDirect(SqlQueryMeta query) {
 
 		// We need to check if we have any joining attributes
@@ -140,7 +193,7 @@ public final class DflComposer {
 		}
 		String directJoin = JoinCondition.findCycle(joins, query);
 		if (directJoin != "") {
-			log.info("Direct JOIN detected on attributed " + directJoin);
+			log.info("Direct JOIN detected on attribute " + directJoin);
 		}
 		return directJoin;
 	}
