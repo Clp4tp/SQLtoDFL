@@ -1,7 +1,7 @@
 package parser;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -9,6 +9,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.commons.lang.NotImplementedException;
 
 public class JoinCondition {
+	private static Logger log = Logger.getLogger(JoinCondition.class.toString());
 	private String[] left;
 	private String[] right;
 	private String operator;
@@ -77,4 +78,34 @@ public class JoinCondition {
 		return "";
 	}
 
+	public static String findCycleImproved(List<JoinCondition> graph, SqlQueryMeta query) {
+		if (query.getFromTables().size() == 2) {
+			if (graph.size() >= 1) {
+				// so if we have 2 tables and actually the graph is bigger than
+				// one we will definitely have a joining attribute.
+				return graph.get(0).left[1]; // pick any since left[1] ==
+												// right[1]
+			}
+		} else {
+			int count = 1; // I already have a connections //TODO probably zero?
+			String directJoin = "";
+			for (int i = 0; i < graph.size(); i++) {
+				JoinCondition node = graph.get(i);
+				for (int j = i; j < graph.size(); j++) {
+					JoinCondition checkNode = graph.get(j);
+					if (node != checkNode) {
+						if (node.hasConnection(checkNode)) {
+							count++;
+							directJoin = node.left[1];
+						}
+					}
+				}
+				if (count == query.getFromTables().size() - 1) {
+					return directJoin;
+				}
+			}
+			log.info("count is " + count);
+		}
+		return "";
+	}
 }

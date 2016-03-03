@@ -35,13 +35,12 @@ import com.google.common.collect.Multimap;
 public final class DflComposer {
 
 	private static Charset charset = Charset.forName("UTF-8");
-
 	private static Logger log = LoggerFactory.getLogger(DflComposer.class);
 
 	public static String writeQueryToFile(Path path, SqlQueryMeta query, int noPartitions, String partitionAttr,
 			String resultTable) {
 		// TODO combined statement has to be partitioned to 1 -- REMEMBER
-		
+
 		String direct = applyDirect(query);
 		if (direct == "") {
 			partitionAttr = "id";
@@ -54,7 +53,6 @@ public final class DflComposer {
 		dfl += prettyPrint(query.getCall().toString().toLowerCase()) + ";\n\n";
 		HashMap<String, String> aliasedTables = new HashMap<>();
 		if (!query.getFromTables().isEmpty() && query.getFromTables().size() == 1) {
-			log.info("dwadaw");
 			for (String key : whereMap.keySet()) {
 				Collection<String> random = whereMap.get(key);
 				if (random.size() >= 1) {
@@ -82,7 +80,8 @@ public final class DflComposer {
 		// 2. any join conditions
 
 		resultTable = resultTable.length() == 0 ? "result" : resultTable;
-		dfl += "distributed create table " + resultTable + " as " + (direct == "" ? "\n" : "external \n"); 
+		dfl += "distributed create table  " + resultTable + " to 1 on " + partitionAttr + " as "
+				+ (direct == "" ? "\n" : "external \n");
 
 		dfl += getDflSelectStmt(query);// CombinedDflSelectStmt(query);
 		dfl += "from " + prettyPrint(aliasedTables.values().toString()) + "\n";
@@ -108,7 +107,7 @@ public final class DflComposer {
 
 	}
 
-	private static String getCombinedDflSelectStmt(SqlQueryMeta query) {
+	private static String getCombinedDflSelectStmt(SqlQueryMeta query, String partitionAttr) {
 		Multimap<String, Multimap<String, String>> functionsMapPerTable = query.getFunctionsMapPerTable();
 		Multimap<String, String> aliasMap = query.getAliasMap();
 		String stmt = "select ";
@@ -172,7 +171,7 @@ public final class DflComposer {
 		}
 
 		if (stmt.contains(","))
-			stmt = stmt.substring(0, stmt.lastIndexOf(',')) + "  \n";
+			stmt = stmt.substring(0, stmt.lastIndexOf(',')) + " \n";
 		return stmt;
 	}
 
@@ -191,10 +190,11 @@ public final class DflComposer {
 		for (SqlBasicCall call : query.getJoinOperations()) {
 			joins.add(new JoinCondition(call));
 		}
-		String directJoin = JoinCondition.findCycle(joins, query);
+		String directJoin = JoinCondition.findCycleImproved(joins, query);
 		if (directJoin != "") {
 			log.info("Direct JOIN detected on attribute " + directJoin);
-		}
+		}else log.info("No JOIN detected ");
+		
 		return directJoin;
 	}
 
