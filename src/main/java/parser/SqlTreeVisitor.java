@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Stack;
+import java.util.logging.Logger;
 
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
@@ -17,6 +18,7 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.util.SqlVisitor;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -24,6 +26,7 @@ import com.google.common.collect.Multimap;
 public class SqlTreeVisitor<R> implements SqlVisitor<R> {
     private static final List<String> InterestingOperators = new ArrayList<String>(
             Arrays.asList("count", "avg", "min", "max", "sum"));
+//    private static Logger log = LoggerFactory.getLogger(SqlTreeVisitor.class);
     public List<String[]>             identifiers          = new ArrayList<>();
     Multimap<String, String>          aliasMap             = HashMultimap.create();
     Multimap<String, String>          functionsMap         = HashMultimap.create();
@@ -49,6 +52,7 @@ public class SqlTreeVisitor<R> implements SqlVisitor<R> {
 
     @Override
     public R visit(SqlLiteral literal) {
+	System.out.println("dawwdawdawd");
         return null;
     }
 
