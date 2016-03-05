@@ -43,7 +43,7 @@ public final class DflComposer {
 
 		String direct = applyDirect(query);
 		if (direct == "") {
-			partitionAttr = "id";
+			partitionAttr = "";
 		} else {
 			partitionAttr = direct;
 		}
@@ -64,9 +64,15 @@ public final class DflComposer {
 			}
 		}
 		for (String table : query.getFromTables()) {
+			if(query.getFromTables().size()==1)break;
 			aliasedTables.put(table, "temp" + table);
+			String partAttr = partitionAttr;
+			if (partitionAttr.equals("")) {
+				partAttr = (String) ( whereMap.get(table)).iterator().next();
+				if(whereMap.get(table).contains("ID")) partAttr = "ID"; //prefer this one( we cannot know the key anyway without a database);
+			}
 			String dflStmt = "distributed create temporary table temp" + table + " to " + noPartitions + " on "
-					+ partitionAttr + " as \n";
+					+ partAttr + " as \n";
 			selectMap.putAll(whereMap);
 			String projection = (prettyPrint(selectMap.get(table).toString())).toLowerCase().length() == 0 ? "*"
 					: (prettyPrint(selectMap.get(table).toString())).toLowerCase();
@@ -81,10 +87,14 @@ public final class DflComposer {
 
 		resultTable = resultTable.length() == 0 ? "result" : resultTable;
 		dfl += "distributed create table  " + resultTable + " to 1 on " + partitionAttr + " as "
-				+ (direct == "" ? "\n" : "external \n");
+				+ (direct == "" ? "\n" : "direct \n");
 
 		dfl += getDflSelectStmt(query);// CombinedDflSelectStmt(query);
+		if(aliasedTables.size()!=0)
 		dfl += "from " + prettyPrint(aliasedTables.values().toString()) + "\n";
+		else {
+		dfl += "from " + prettyPrint(query.getFromTables().toString()) + "\n";	
+		}
 		dfl += "where ";
 		String[] s = prettyPrint(query.getWhere().toString()).split("\\s+");
 		for (String subs : s) {
@@ -92,8 +102,11 @@ public final class DflComposer {
 			for (String a : any) {
 				if (aliasedTables.containsKey(a)) {
 					dfl += aliasedTables.get(a) + ".";
-				} else
-					dfl += a + " ";
+				} else {
+					if(query.getFromTables().size()==1)	{
+						if (a.equals(query.getFromTables().iterator().next())) a="";
+							}
+						dfl += a + " ";}
 			}
 		}
 		dfl += ";";
@@ -202,6 +215,14 @@ public final class DflComposer {
 
 			return directJoin;
 		}
+		return "";
+	}
+
+	private static String repartition(SqlQueryMeta query) {
+		// Now we need to make sure that no direct can be applied to all the
+		// tables,
+		// but there may be
+
 		return "";
 	}
 

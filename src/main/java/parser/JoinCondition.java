@@ -50,33 +50,6 @@ public class JoinCondition {
 		return false;
 	}
 
-	public static String findCycle(List<JoinCondition> graph, SqlQueryMeta query) {
-		if (query.getFromTables().size() == 2) {
-			if (graph.size() >= 1) {
-				// so if we have 2 tables and actually the graph is bigger than
-				// one we will definitely have a joining attribute.
-				return graph.get(0).left[1]; // pick any since left[1] ==
-												// right[1]
-			}
-		} else {
-			int count = 1; // I already have a connections
-			String directJoin = "";
-			for (JoinCondition node : graph) {
-				for (JoinCondition checkNode : graph) {
-					if (node != checkNode) {
-						if (node.hasConnection(checkNode)) {
-							count++;
-							directJoin = node.left[1];
-						}
-					}
-				}
-				if (count == query.getFromTables().size() - 1) {
-					return directJoin;
-				}
-			}
-		}
-		return "";
-	}
 
 	public static String findCycleImproved(List<JoinCondition> graph, SqlQueryMeta query) {
 		if (query.getFromTables().size() == 2) {
