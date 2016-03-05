@@ -135,6 +135,9 @@ public final class DflComposer {
 		List<List<String>> functionsPerTable = query.getFunctionsToTables();
 		Multimap<String, String> aliasMap = query.getAliasMap();
 		String stmt = "select ";
+		if (query.getCall().toString().contains(" DISTINCT ")) {
+			stmt += "distinct ";
+		}
 		if (functionsPerTable.size() > 0) {
 			for (List<String> list : functionsPerTable) {
 				if (list.size() < 2) {
@@ -186,16 +189,20 @@ public final class DflComposer {
 		// same attribute needs to be present to all nodes connecting them
 		// with join operator [ =, >=, <= ]
 
-		List<JoinCondition> joins = new ArrayList<>();
-		for (SqlBasicCall call : query.getJoinOperations()) {
-			joins.add(new JoinCondition(call));
+		if (query.getFromTables().size() > 1) {
+			List<JoinCondition> joins = new ArrayList<>();
+			for (SqlBasicCall call : query.getJoinOperations()) {
+				joins.add(new JoinCondition(call));
+			}
+			String directJoin = JoinCondition.findCycleImproved(joins, query);
+			if (directJoin != "") {
+				log.info("Direct JOIN detected on attribute " + directJoin);
+			} else
+				log.info("No JOIN detected ");
+
+			return directJoin;
 		}
-		String directJoin = JoinCondition.findCycleImproved(joins, query);
-		if (directJoin != "") {
-			log.info("Direct JOIN detected on attribute " + directJoin);
-		}else log.info("No JOIN detected ");
-		
-		return directJoin;
+		return "";
 	}
 
 	private static String prettyPrint(String s) {
