@@ -73,7 +73,6 @@ import com.google.common.collect.Multimap;
 public class Parser {
 	public static FrameworkConfig frameworkConfig;
 	private static Logger log = LoggerFactory.getLogger(Parser.class);
-	private static final String[] functions = { "count", "avg", "min", "max", "as", "-", "+" };
 
 	public void attachShutDownHook() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -137,6 +136,7 @@ public class Parser {
 		
 		query.getWhere().accept(insperctorB);
 		query.setWhereIdentifiers(insperctorB.identifiers);
+		query.setWhereOperations(insperctorB.whereOperations);
 		// after having the identifiers lets keep them for our next run with the
 		insperctorR.setIdentifiers(insperctorB.identifiers);
 		insperctorR.setTables(query.findTableParticipatingIdentifiers(query.getSelectIdentifiers()));

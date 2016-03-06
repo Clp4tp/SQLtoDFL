@@ -33,10 +33,12 @@ public class SqlTreeVisitor<R> implements SqlVisitor<R> {
     private Stack<String>             lastVisited          = new Stack<>();
     // private SqlSimpleNode node;
     SqlBasicVisitor.ArgHandler<R>     argHandler           = SqlBasicVisitor.ArgHandlerImpl.instance();
-
+    List<SqlBasicCall> whereOperations = new ArrayList<SqlBasicCall>();
+    
     @Override
     public R visit(SqlCall call) {
         SqlOperator op = call.getOperator();
+        whereOperations.add((SqlBasicCall) call);
         //System.out.println(call.toString());
         if (op.getName().equals("AS"))
             aliasMap.put(call.getOperandList().get(1).toString(), call.getOperandList().get(0).toString());

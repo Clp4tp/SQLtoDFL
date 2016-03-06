@@ -4,7 +4,7 @@ import parser.Parser;
 
 public class RepartitionTests {
 
-	@Test
+	//@Test
 	public void testQuerySelectCase2() { // question here -> do we need the 1rst
 											// distributed query?
 		//TODO run this there are some problems
@@ -24,5 +24,16 @@ public class RepartitionTests {
 //
 //		System.out.println("------------testQueryParserCase10------------------");
 //	}
+	
+	 @Test
+		public void testQuerySelectCase7() {// should NOT DETECT JOIN
+			System.out.println("------------testQueryParserCase7-----------------");
+			String s = "select * from A , B, C, D, E, F, G where " + "A.id=B.id and  A.name=B.name and C.name=B.name and "
+					+ "D.id = B.id and E.id = B.id and F.name=C.name and G.id=A.id ";
+			Parser parser = new Parser();
+			System.out.println(parser.processQuery(s));
+
+			System.out.println("------------testQueryParserCase7-----------------");
+		}
 
 }

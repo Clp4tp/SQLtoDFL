@@ -38,7 +38,7 @@ public class SqlQueryMeta {
     private Multimap<String, Multimap<String, String>> functionsMapPerTable = HashMultimap.create();
     private List<List<String>> functionsToTables = new ArrayList<>();
     // private SqlSimpleNode selectList;
-
+    private  List<SqlBasicCall> whereOperations = new ArrayList<SqlBasicCall>();
   
 
 	public SqlQueryMeta(SqlSelect call) {
@@ -259,4 +259,13 @@ public class SqlQueryMeta {
   	public void setFunctionsToTables(List<List<String>> functionsToTables) {
   		this.functionsToTables = functionsToTables;
   	}
+
+	public List<SqlBasicCall> getWhereOperations() {
+		return whereOperations;
+	}
+
+	public void setWhereOperations(List<SqlBasicCall> whereOperations) {
+		this.whereOperations = whereOperations;
+	}
+
 }

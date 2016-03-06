@@ -1,5 +1,6 @@
 package parser;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -13,11 +14,13 @@ public class JoinCondition {
 	private String[] left;
 	private String[] right;
 	private String operator;
+	 List<String> tables;
 	private boolean isSimple = false;
 
 	public JoinCondition(SqlBasicCall call) {
 		operator = call.getOperator().toString();
 		SqlNode[] operands = call.operands;
+		tables= new ArrayList<>();
 		if (operands[0] instanceof SqlIdentifier && operands[1] instanceof SqlIdentifier) {
 			SqlIdentifier op1 = (SqlIdentifier) operands[0];
 			SqlIdentifier op2 = (SqlIdentifier) operands[1];
@@ -28,6 +31,8 @@ public class JoinCondition {
 			} else {
 				left = new String[] { op1.names.get(0), op1.names.get(1) };
 				right = new String[] { op2.names.get(0), op2.names.get(1) };
+				tables.add(op1.names.get(0));
+				tables.add(op2.names.get(0));
 			}
 		}
 		if (!isSimple) {
@@ -80,5 +85,28 @@ public class JoinCondition {
 			log.info("count is " + count);
 		}
 		return "";
+	}
+	public String[] getLeft() {
+		return left;
+	}
+
+	public void setLeft(String[] left) {
+		this.left = left;
+	}
+
+	public String[] getRight() {
+		return right;
+	}
+
+	public void setRight(String[] right) {
+		this.right = right;
+	}
+	
+	public static List<String> tablesIntertwined(JoinCondition a, JoinCondition b){
+		List<String> intertwined =  new ArrayList();
+		for(String tbl : a.tables){
+			if(b.tables.contains(tbl)) intertwined.add(tbl);
+		}
+		return intertwined;
 	}
 }

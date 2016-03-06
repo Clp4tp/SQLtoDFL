@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -64,12 +65,15 @@ public final class DflComposer {
 			}
 		}
 		for (String table : query.getFromTables()) {
-			if(query.getFromTables().size()==1)break;
+			if (query.getFromTables().size() == 1)
+				break;
 			aliasedTables.put(table, "temp" + table);
 			String partAttr = partitionAttr;
 			if (partitionAttr.equals("")) {
-				partAttr = (String) ( whereMap.get(table)).iterator().next();
-				if(whereMap.get(table).contains("ID")) partAttr = "ID"; //prefer this one( we cannot know the key anyway without a database);
+				partAttr = (String) (whereMap.get(table)).iterator().next();
+				if (whereMap.get(table).contains("ID"))
+					partAttr = "ID"; // prefer this one( we cannot know the key
+										// anyway without a database);
 			}
 			String dflStmt = "distributed create temporary table temp" + table + " to " + noPartitions + " on "
 					+ partAttr + " as \n";
@@ -81,20 +85,25 @@ public final class DflComposer {
 			dfl += dflStmt + selectStmt;
 		}
 
-		// create the end product using
-		// 1. alias and functions
-		// 2. any join conditions
+		// CREATE THE FINAL STATEMENTS REPARTITION AND END PRODUCT
+		// if()
 
 		resultTable = resultTable.length() == 0 ? "result" : resultTable;
 		dfl += "distributed create table  " + resultTable + " to 1 on " + partitionAttr + " as "
 				+ (direct == "" ? "\n" : "direct \n");
-
-		dfl += getDflSelectStmt(query);// CombinedDflSelectStmt(query);
-		if(aliasedTables.size()!=0)
-		dfl += "from " + prettyPrint(aliasedTables.values().toString()) + "\n";
-		else {
-		dfl += "from " + prettyPrint(query.getFromTables().toString()) + "\n";	
+		if (query.getFromTables().size() != 1) {
+			dfl += getDflSelectStmt(query);// CombinedDflSelectStmt(query);
+		} else {
+			return dfl += prettyPrint(query.getCall().toString().toLowerCase());
 		}
+
+		if (aliasedTables.size() != 0)
+			dfl += "from " + prettyPrint(aliasedTables.values().toString()) + "\n";
+		else {
+			dfl += "from " + prettyPrint(query.getFromTables().toString()) + "\n";
+		}
+
+		// WHERE LAST STATEMENT
 		dfl += "where ";
 		String[] s = prettyPrint(query.getWhere().toString()).split("\\s+");
 		for (String subs : s) {
@@ -103,10 +112,8 @@ public final class DflComposer {
 				if (aliasedTables.containsKey(a)) {
 					dfl += aliasedTables.get(a) + ".";
 				} else {
-					if(query.getFromTables().size()==1)	{
-						if (a.equals(query.getFromTables().iterator().next())) a="";
-							}
-						dfl += a + " ";}
+					dfl += a + " ";
+				}
 			}
 		}
 		dfl += ";";
@@ -118,30 +125,6 @@ public final class DflComposer {
 
 		return dfl;
 
-	}
-
-	private static String getCombinedDflSelectStmt(SqlQueryMeta query, String partitionAttr) {
-		Multimap<String, Multimap<String, String>> functionsMapPerTable = query.getFunctionsMapPerTable();
-		Multimap<String, String> aliasMap = query.getAliasMap();
-		String stmt = "select ";
-
-		for (String key : functionsMapPerTable.keySet()) {
-			Collection<Multimap<String, String>> map = functionsMapPerTable.get(key);
-			for (Multimap<String, String> mmap : map) {
-				for (String function : mmap.keySet()) {
-					Collection<String> l = mmap.keySet();
-					String temp = key.equals("*") ? "" : "temp";
-					stmt += function + "(" + temp + prettyPrint(mmap.get(function).toString()) + ")";
-					String s = function + "(" + prettyPrint(mmap.get(function).toString()) + ")";
-					if (aliasMap.containsKey(s)) {
-						stmt += " as " + prettyPrint(aliasMap.get(s).toString());
-					}
-				}
-				stmt += ", ";
-			}
-		}
-		stmt = stmt.substring(0, stmt.lastIndexOf(',')) + " as \n";
-		return stmt;
 	}
 
 	private static String getDflSelectStmt(SqlQueryMeta query) {
@@ -203,17 +186,27 @@ public final class DflComposer {
 		// with join operator [ =, >=, <= ]
 
 		if (query.getFromTables().size() > 1) {
-			List<JoinCondition> joins = new ArrayList<>();
+//			List<JoinCondition> joins = new ArrayList<>();
+			Stack<JoinCondition> stack = new Stack<>();
 			for (SqlBasicCall call : query.getJoinOperations()) {
-				joins.add(new JoinCondition(call));
+//				joins.add(new JoinCondition(call));
+				stack.push(new JoinCondition(call));
 			}
-			String directJoin = JoinCondition.findCycleImproved(joins, query);
-			if (directJoin != "") {
-				log.info("Direct JOIN detected on attribute " + directJoin);
-			} else
-				log.info("No JOIN detected ");
 
-			return directJoin;
+			PartitionManager man = new PartitionManager(stack, query);
+//			String directJoin = JoinCondition.findCycleImproved(joins, query);
+			if (!man.masterPartition.equals("")) {
+				log.info("Direct JOIN detected on attribute " + man.masterPartition);
+			}
+			else{
+				
+			}
+			// if (directJoin != "") {
+			// log.info("Direct JOIN detected on attribute " + directJoin);
+			// } else
+			// log.info("No JOIN detected ");
+
+			return man.masterPartition;
 		}
 		return "";
 	}
