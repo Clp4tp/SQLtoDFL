@@ -186,14 +186,14 @@ public final class DflComposer {
 		// with join operator [ =, >=, <= ]
 
 		if (query.getFromTables().size() > 1) {
-//			List<JoinCondition> joins = new ArrayList<>();
-			Stack<JoinCondition> stack = new Stack<>();
+			List<JoinCondition> joins = new ArrayList<>();
+//			Stack<JoinCondition> stack = new Stack<>();
 			for (SqlBasicCall call : query.getJoinOperations()) {
-//				joins.add(new JoinCondition(call));
-				stack.push(new JoinCondition(call));
+				joins.add(new JoinCondition(call));
+//				stack.push(new JoinCondition(call));
 			}
 
-			PartitionManager man = new PartitionManager(stack, query);
+			PartitionManager man = new PartitionManager(joins, query);
 //			String directJoin = JoinCondition.findCycleImproved(joins, query);
 			if (!man.masterPartition.equals("")) {
 				log.info("Direct JOIN detected on attribute " + man.masterPartition);

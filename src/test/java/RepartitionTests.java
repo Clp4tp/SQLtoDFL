@@ -15,17 +15,17 @@ public class RepartitionTests {
 		System.out.println("------------testQueryParserCase2-----------------");
 	}
 
-//	@Test
-//	public void testQuerySelectCase10() {// should detect JOIN on NAME
-//		System.out.println("------------testQueryParserCase10-----------------");
-//		String s = "Select A.id from A, B, C where A.id=B.id and C.name=B.name ";
-//		Parser parser = new Parser();
-//		System.out.println(parser.processQuery(s));
-//
-//		System.out.println("------------testQueryParserCase10------------------");
-//	}
+	//@Test
+	public void testQuerySelectCase10() {// should detect JOIN on NAME
+		System.out.println("------------testQueryParserCase10-----------------");
+		String s = "Select A.id from A, B, C where A.id=B.id and C.name=B.name ";
+		Parser parser = new Parser();
+		System.out.println(parser.processQuery(s));
+
+		System.out.println("------------testQueryParserCase10------------------");
+	}
 	
-	 @Test
+	//@Test
 		public void testQuerySelectCase7() {// should NOT DETECT JOIN
 			System.out.println("------------testQueryParserCase7-----------------");
 			String s = "select * from A , B, C, D, E, F, G where " + "A.id=B.id and  A.name=B.name and C.name=B.name and "
@@ -35,5 +35,30 @@ public class RepartitionTests {
 
 			System.out.println("------------testQueryParserCase7-----------------");
 		}
+
+		
+		 @Test
+			public void testQuerySelectCase8() {// should NOT DETECT JOIN
+				System.out.println("------------testQueryParserCase7-----------------");
+				String s = "select * from A , B, C, D where " + "A.id=B.id and  A.name=B.name and C.name=B.name and "
+						+ "D.id = B.id  ";
+				Parser parser = new Parser();
+				System.out.println(parser.processQuery(s));
+
+				System.out.println("------------testQueryParserCase7-----------------");
+			}
+		 
+		 //@Test
+			public void testQuerySelectCase6() {// should detect JOIN on NAME
+				System.out.println("------------testQueryParserCase6-----------------");
+				String s = "select distinct count(A.id) as \"count\", C.salary as \"sal\", "
+						+ "C.name as \"employee\", count(*) as total from A , B, C, D where "
+						+ "A.id=B.id and C.name=B.name and A.name=B.name and "
+						+ "C.age<B.age or C.age<>A.age and D.name=B.name";
+				Parser parser = new Parser();
+				System.out.println(parser.processQuery(s));
+
+				System.out.println("------------testQueryParserCase6-----------------");
+			}
 
 }
