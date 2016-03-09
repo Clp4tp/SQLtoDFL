@@ -1,9 +1,28 @@
+import org.apache.calcite.jdbc.CalcitePrepare.Query;
+import org.apache.calcite.linq4j.QueryProviderImpl;
+import org.apache.calcite.plan.volcano.VolcanoPlanner;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelNodes;
 import org.junit.Test;
 
 import parser.Parser;
 
 public class RepartitionTests {
 
+   // @Test
+    public void testVolcano(){
+	String s = "select * from A , B, C, D, E, F, G where " + "A.id=B.id and  A.name=B.name and C.name=B.name and "
+		+ "D.id = B.id and E.id = B.id and F.name=C.name and G.id=A.id ";
+	String ss = VolcanoPlanner.normalizePlan(s);
+	VolcanoPlanner planner = new VolcanoPlanner();
+	
+//	planner.
+	System.out.println(ss);
+	
+    }
+    
+    
+    
 	//@Test
 	public void testQuerySelectCase2() { // question here -> do we need the 1rst
 											// distributed query?
@@ -25,11 +44,11 @@ public class RepartitionTests {
 		System.out.println("------------testQueryParserCase10------------------");
 	}
 	
-	//@Test
+	@Test
 		public void testQuerySelectCase7() {// should NOT DETECT JOIN
 			System.out.println("------------testQueryParserCase7-----------------");
 			String s = "select * from A , B, C, D, E, F, G where " + "A.id=B.id and  A.name=B.name and C.name=B.name and "
-					+ "D.id = B.id and E.id = B.id and F.name=C.name and G.id=A.id ";
+					+ "D.id = B.id and E.id = B.id and F.name=C.name and C.name = A.name and G.id=A.id ";
 			Parser parser = new Parser();
 			System.out.println(parser.processQuery(s));
 
@@ -37,7 +56,7 @@ public class RepartitionTests {
 		}
 
 		
-		 @Test
+//		 @Test
 			public void testQuerySelectCase8() {// should NOT DETECT JOIN
 				System.out.println("------------testQueryParserCase7-----------------");
 				String s = "select * from A , B, C, D where " + "A.id=B.id and  A.name=B.name and C.name=B.name and "

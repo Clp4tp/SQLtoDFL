@@ -12,6 +12,7 @@ public class PartitionManager {
 	Stack<JoinCondition> stack;
 	SqlQueryMeta query;
 	String masterPartition;
+	String[] joinOnTablesDirect;
 	List<JoinCondition> graph;
 	List<List<JoinCondition>> possibleRepartitions;
 	List<List<JoinCondition>> repartitions;
@@ -38,7 +39,11 @@ public class PartitionManager {
 			} while (partitionGrade - i >= 1);
 
 		}
-
+		joinOnTablesDirect = new String[repartitions.size()-1];
+		for(int i=1 ;i < repartitions.size(); i++){
+		    joinOnTablesDirect[i-1]=repartitions.get(i).get(0).joinAttribute;
+		}
+		
 	}
 
 	
@@ -66,7 +71,7 @@ public class PartitionManager {
 				}
 				if (addCandidate) {
 					repartitions.add(possible);
-					return ;
+//					return ;
 				}
 
 			}

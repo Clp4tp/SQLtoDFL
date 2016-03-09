@@ -14,7 +14,10 @@ public class JoinCondition {
 	private String[] left;
 	private String[] right;
 	private String operator;
-	 List<String> tables;
+	public String tableR;
+	public String tableL;
+	public String joinAttribute;
+	List<String> tables;
 	private boolean isSimple = false;
 
 	public JoinCondition(SqlBasicCall call) {
@@ -27,12 +30,16 @@ public class JoinCondition {
 			if (op1.isSimple() && op2.isSimple()) {
 				left = new String[] { op1.getSimple() };
 				right = new String[] { op2.getSimple() };
+				joinAttribute = op1.getSimple();
 				isSimple = true;
 			} else {
 				left = new String[] { op1.names.get(0), op1.names.get(1) };
 				right = new String[] { op2.names.get(0), op2.names.get(1) };
+				tableL = op1.names.get(0);
+				tableR = op2.names.get(0);
 				tables.add(op1.names.get(0));
 				tables.add(op2.names.get(0));
+				joinAttribute = op1.names.get(1);
 			}
 		}
 		if (!isSimple) {
