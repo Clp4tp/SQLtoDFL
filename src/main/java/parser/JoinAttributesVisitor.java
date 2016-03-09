@@ -30,11 +30,15 @@ public class JoinAttributesVisitor<R> implements SqlVisitor<R> {
     Multimap<String, String>          functionsMap         = HashMultimap.create();
     private Stack<String>             lastVisited          = new Stack<>();
     // private SqlSimpleNode node;
+    private static final List<String> JoinOperators = new ArrayList<String>(
+            Arrays.asList("AND", "OR"));
     SqlBasicVisitor.ArgHandler<R>     argHandler           = SqlBasicVisitor.ArgHandlerImpl.instance();
     List<SqlBasicCall> joinOperations = new ArrayList<SqlBasicCall>();
+    List<String> xlusiveOperator = new ArrayList<>();
     @Override
     public R visit(SqlCall call) {
 	SqlOperator op = call.getOperator();
+	if(JoinOperators.contains(op.toString())) xlusiveOperator.add(op.toString());
 	List<SqlNode> l = call.getOperandList();
 	if (call instanceof SqlBasicCall) {
 	    if (Operators.contains(op.toString())) {

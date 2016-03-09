@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
+import org.apache.calcite.avatica.QueryState;
+import org.apache.calcite.jdbc.CalcitePrepare.Query;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
@@ -223,16 +225,23 @@ public final class DflComposer {
 	    if (manager.repartitions.size() != 0) {
 		int i = 0;
 		for (List<JoinCondition> list : manager.repartitions) {
-
+			String whereClause = " ";
 		    List<String> tables = new ArrayList<>();
 		    for (JoinCondition jC : list) {
 			if (!tables.contains(jC.tableL))
 			    tables.add(jC.tableL);
 			if (!tables.contains(jC.tableR))
 			    tables.add(jC.tableR);
+		
 		    }
-		    partitionDfl += "distributed create temporary table temp" + prettyPrint(tables.toString()) + " to "
-			    + noPartitions + " on " + manager.joinOnTablesDirect[i];
+			getWhereClause(query, list, tables);
+		    partitionDfl += "distributed create temporary table temp" + printConcat(prettyPrint(tables.toString())) + " to "
+			    + noPartitions + " on " + manager.joinOnTablesDirect[i]+ " \n" 
+			    + " from " + prettyPrint(tables.toString()) + " \n" 
+			    + " where " + whereClause ;
+		  
+		    
+		    
 		    i++;
 
 		}
@@ -242,9 +251,32 @@ public final class DflComposer {
 	return "";
     }
 
+    private static String getWhereClause(SqlQueryMeta query, List<JoinCondition> list, List<String> tables){
+    	List<SqlBasicCall> whereClause  = query.getWhereOperations();
+    	String returnCall = "";
+    	String[] completeCall = query.getWhere().toString().split("\\s+");
+    	for(SqlBasicCall call : whereClause){
+    		String cal = prettyPrint(call.toString());
+    		for(JoinCondition jc : list)
+    		if(cal.trim().equals(jc.toString().trim())){
+    			returnCall+=cal.trim();
+    			for(int i =0 ; i< completeCall.length; i++){
+    				if(prettyPrint(completeCall[i]).equals(cal)){
+    					
+    				}
+    			}
+    		}
+    	}
+    	log.info("dawdawd");
+    	
+    	return "";
+    }
     private static String prettyPrint(String s) {
 	return new String(s.replace("[", "").replace("]", "").replace("`", ""));
 
+    }
+    private static String printConcat(String s){
+    	return new String(s.replace(",","").replace(" ", ""));
     }
 
 }

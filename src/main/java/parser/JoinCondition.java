@@ -116,4 +116,11 @@ public class JoinCondition {
 		}
 		return intertwined;
 	}
+	@Override
+	public String toString(){
+		if(left.length==2 && right.length==2){
+			return new String(left[0]+ "."+left[1] + " " +operator + " " + right[0]+ "."+right[1] + " ");
+		}
+		 return new String(left[0] + operator + right[0] + " ");
+	}
 }

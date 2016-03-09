@@ -40,7 +40,7 @@ public class SqlQueryMeta {
     // private SqlSimpleNode selectList;
     private  List<SqlBasicCall> whereOperations = new ArrayList<SqlBasicCall>();
   
-
+    public List<String> JoinOperators ;
 	public SqlQueryMeta(SqlSelect call) {
 	this.call = call;
 	selectIdentifiers = new ArrayList<>();

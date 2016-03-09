@@ -97,7 +97,8 @@ public class Parser {
 		// //ORDER BY is FUCKING DIFFERENT
 		JoinAttributesVisitor<SqlNodeList> joinAttrVisitor = new JoinAttributesVisitor<>();
 		query.getWhere().accept(joinAttrVisitor);
-		query.setJoinOperations(  joinAttrVisitor.joinOperations);
+		query.setJoinOperations(joinAttrVisitor.joinOperations);
+		query.JoinOperators = joinAttrVisitor.xlusiveOperator;
 		Path path = Paths.get("UDF_Statement.sql");
 		String output = new DflComposer().writeQueryToFile(path, query, 10, "id", "");
 		return output;
@@ -105,8 +106,6 @@ public class Parser {
 
 	public SqlNode parseQuery(String s) {
 		SqlParser p = SqlParser.create(s);
-		org.apache.calcite.sql.parser.SqlAbstractParserImpl.Metadata met= p.getMetadata();
-		
 		SqlNode node = null;
 		try {
 			node = p.parseStmt();
