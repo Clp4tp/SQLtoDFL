@@ -1,8 +1,8 @@
 package parser;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Stack;
 
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -41,6 +41,7 @@ public class SqlQueryMeta {
     private  List<SqlBasicCall> whereOperations = new ArrayList<SqlBasicCall>();
   
     public List<String> JoinOperators ;
+    public Stack<OperatorOnSubtree> operatorAndSubtree;
 	public SqlQueryMeta(SqlSelect call) {
 	this.call = call;
 	selectIdentifiers = new ArrayList<>();

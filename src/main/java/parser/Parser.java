@@ -92,12 +92,11 @@ public class Parser {
 		query.setAliasMap(insperctorR.aliasMap);
 		query.setFunctionsToTables(insperctorR.functionsToTables);
 		insperctorB = new SqlTreeVisitor<>();
-		// query.getGroupby().accept(insperctorB);
-		// query.setGroupByIdentifiers(insperctorB.identifiers);
-		// //ORDER BY is FUCKING DIFFERENT
+
 		JoinAttributesVisitor<SqlNodeList> joinAttrVisitor = new JoinAttributesVisitor<>();
 		query.getWhere().accept(joinAttrVisitor);
 		query.setJoinOperations(joinAttrVisitor.joinOperations);
+		query.operatorAndSubtree = joinAttrVisitor.operatorAndSubtree;
 		query.JoinOperators = joinAttrVisitor.xlusiveOperator;
 		Path path = Paths.get("UDF_Statement.sql");
 		String output = new DflComposer().writeQueryToFile(path, query, 10, "id", "");

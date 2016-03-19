@@ -31,14 +31,36 @@ public class JoinAttributesVisitor<R> implements SqlVisitor<R> {
     private Stack<String>             lastVisited          = new Stack<>();
     // private SqlSimpleNode node;
     private static final List<String> JoinOperators = new ArrayList<String>(
-            Arrays.asList("AND", "OR"));
+            Arrays.asList("AND", "OR", "LIKE"));
     SqlBasicVisitor.ArgHandler<R>     argHandler           = SqlBasicVisitor.ArgHandlerImpl.instance();
     List<SqlBasicCall> joinOperations = new ArrayList<SqlBasicCall>();
     List<String> xlusiveOperator = new ArrayList<>();
+    
+   
+    
+    Stack<OperatorOnSubtree> operatorAndSubtree =  new Stack<>();
+    
+    
     @Override
     public R visit(SqlCall call) {
 	SqlOperator op = call.getOperator();
 	if(JoinOperators.contains(op.toString())) xlusiveOperator.add(op.toString());
+
+	
+	if(call.getOperandList().size()==2 && JoinOperators.contains(op.toString())){
+		for(String c : JoinOperators){
+			if(call.getOperandList().get(0).toString().contains(c) && !call.getOperandList().get(1).toString().contains(c)){
+				operatorAndSubtree.add(new OperatorOnSubtree(call.getOperandList().get(1), op));
+				break;
+			}else {
+				operatorAndSubtree.add(new OperatorOnSubtree(call.getOperandList().get(1), op));
+				operatorAndSubtree.add(new OperatorOnSubtree(call.getOperandList().get(0), op));
+				break;
+			}
+			
+		}
+			
+	}
 	List<SqlNode> l = call.getOperandList();
 	if (call instanceof SqlBasicCall) {
 	    if (Operators.contains(op.toString())) {
