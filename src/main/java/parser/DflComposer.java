@@ -39,8 +39,8 @@ public final class DflComposer {
 	private PartitionManager manager;
 	private static Charset charset = Charset.forName("UTF-8");
 	private static Logger log = LoggerFactory.getLogger(DflComposer.class);
-
-
+	String partitionAttr;
+	HashMap<String, String> aliasedTables ;
 
 	public String writeQueryToFile(Path path, SqlQueryMeta query, int noPartitions, String partitionAttr,
 			String resultTable) {
@@ -56,7 +56,7 @@ public final class DflComposer {
 		Multimap<String, String> whereMap = query.findTableParticipatingIdentifiers(query.getWhereIdentifiers());
 		String dfl = "";
 		dfl += prettyPrint(query.getCall().toString().toLowerCase()) + ";\n\n";
-		HashMap<String, String> aliasedTables = new HashMap<>();
+		aliasedTables = new HashMap<>();
 		if (!query.getFromTables().isEmpty() && query.getFromTables().size() == 1) {
 			for (String key : whereMap.keySet()) {
 				Collection<String> random = whereMap.get(key);
@@ -93,38 +93,9 @@ public final class DflComposer {
 		// if()
 
 		// TODO -- Start repartitioning here
-		dfl += repartition(query, dfl, noPartitions);
+		dfl += repartition(query, dfl, noPartitions, resultTable, direct);
 
-		resultTable = resultTable.length() == 0 ? "result" : resultTable;
-		dfl += "distributed create table  " + resultTable + " to 1 "
-				+ (partitionAttr.equals("") ? "" : "on " + partitionAttr + " ") + "as "
-				+ (direct == "" ? "\n" : "direct \n");
-		if (query.getFromTables().size() != 1) {
-			dfl += getDflSelectStmt(query);// CombinedDflSelectStmt(query);
-		} else {
-			return dfl += prettyPrint(query.getCall().toString().toLowerCase());
-		}
-
-		if (aliasedTables.size() != 0)
-			dfl += "from " + prettyPrint(aliasedTables.values().toString()) + " \n";
-		else {
-			dfl += "from " + prettyPrint(query.getFromTables().toString()) + " \n";
-		}
-
-		// WHERE LAST STATEMENT
-		dfl += "where ";
-		String[] s = prettyPrint(query.getWhere().toString()).split("\\s+");
-		for (String subs : s) {
-			String[] any = subs.split("\\.");
-			for (String a : any) {
-				if (aliasedTables.containsKey(a)) {
-					dfl += aliasedTables.get(a) + ".";
-				} else {
-					dfl += a + " ";
-				}
-			}
-		}
-		dfl += ";";
+		
 		try (BufferedWriter writer = Files.newBufferedWriter(path, charset)) {
 			writer.write(dfl, 0, dfl.length());
 		} catch (IOException x) {
@@ -221,7 +192,7 @@ public final class DflComposer {
 		return "";
 	}
 
-	private String repartition(SqlQueryMeta query, String dfl, int noPartitions) {
+	private String repartition(SqlQueryMeta query, String dfl, int noPartitions, String resultTable, String direct) {
 		String partitionDfl = "";
 		if (manager.masterPartition.equals("")) {
 			if (manager.repartitions.size() != 0) {
@@ -260,13 +231,16 @@ public final class DflComposer {
 						conjoinedTbls += (t.startsWith("temp") ? "" : t);
 					}
 					aliasedTbls = "temp" + (printConcat(prettyPrint(conjoinedTbls)));
-					whereClause += getWhereClause(query, list, tables, aliasedTbls);
+					Set<String> participatingIdentifiers = new HashSet<>();
+					whereClause += getWhereClause(query, list, tables, aliasedTbls, participatingIdentifiers);
 					partitionDfl += "distributed create temporary table temp"
-							+ printConcat(prettyPrint(tables.toString())) + " to " + noPartitions + " on ";
+							+ prettyPrint(conjoinedTbls) + " to " + noPartitions ;
 					if (!(manager.joinOnTablesDirect.length == i))
-						partitionDfl += manager.joinOnTablesDirect[i]  ;
-
-					partitionDfl += "\n from " + prettyPrint(tables.toString()) + " \n" + " where " + whereClause + " \n\n";
+						partitionDfl += " on " + manager.joinOnTablesDirect[i] ;
+					partitionDfl += " as direct  \n select ";
+					partitionDfl += prettyPrint(participatingIdentifiers.toString())  + " " ;
+					
+					partitionDfl += "\n from " + prettyPrint(tables.toString()) + " \n" + " where " + whereClause + "; \n\n";
 
 					i++;
 
@@ -275,17 +249,48 @@ public final class DflComposer {
 
 		}else{
 			
+			resultTable = resultTable.length() == 0 ? "result" : resultTable;
+			partitionDfl += "distributed create table  " + resultTable + " to 1 "
+					+ (partitionAttr.equals("") ? "" : "on " + partitionAttr + " ") + "as "
+					+ (direct == "" ? "\n" : "direct \n");
+			if (query.getFromTables().size() != 1) {
+				partitionDfl += getDflSelectStmt(query);// CombinedDflSelectStmt(query);
+			} else {
+				return partitionDfl += prettyPrint(query.getCall().toString().toLowerCase());
+			}
+
+			if (aliasedTables.size() != 0)
+				partitionDfl += "from " + prettyPrint(aliasedTables.values().toString()) + " \n";
+			else {
+				partitionDfl += "from " + prettyPrint(query.getFromTables().toString()) + " \n";
+			}
+
+			// WHERE LAST STATEMENT
+			partitionDfl += "where ";
+			String[] s = prettyPrint(query.getWhere().toString()).split("\\s+");
+			for (String subs : s) {
+				String[] any = subs.split("\\.");
+				for (String a : any) {
+					if (aliasedTables.containsKey(a)) {
+						partitionDfl += aliasedTables.get(a) + ".";
+					} else {
+						partitionDfl += a + " ";
+					}
+				}
+			}
+			partitionDfl += ";";
 		}
 		return partitionDfl;
 	}
 
 	private static String getWhereClause(SqlQueryMeta query, List<JoinCondition> list, List<String> tables,
-			String alias) {
+			String alias, Set<String> participatingIdentifiers) {
 		String returnCall = " ";
-
+		
 		for (JoinCondition e : list) {
 			for (int i = 0; i < query.operatorAndSubtree.size(); i++) {
 				if (query.operatorAndSubtree.get(i).cond.equals(e)) {
+					participatingIdentifiers.add(e.joinAttribute);
 					returnCall += query.operatorAndSubtree.get(i).toString() + " ";
 					query.operatorAndSubtree.remove(i);
 					break;
@@ -296,6 +301,7 @@ public final class DflComposer {
 		for (int i = 0; i < query.operatorAndSubtree.size(); i++) {
 			if (tables.containsAll(query.operatorAndSubtree.get(i).cond.tables)) {
 				returnCall += query.operatorAndSubtree.get(i).toString() + " ";
+				participatingIdentifiers.add(query.operatorAndSubtree.get(i).cond.joinAttribute);
 				query.operatorAndSubtree.remove(i);
 			}
 		}
