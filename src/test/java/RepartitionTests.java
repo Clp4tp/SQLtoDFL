@@ -1,5 +1,6 @@
 import org.apache.calcite.jdbc.CalcitePrepare.Query;
 import org.apache.calcite.linq4j.QueryProviderImpl;
+import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelNodes;
@@ -9,75 +10,47 @@ import parser.Parser;
 
 public class RepartitionTests {
 
-   // @Test
-    public void testVolcano(){
-	String s = "select * from A , B, C, D, E, F, G where " + "A.id=B.id and  A.name=B.name and C.name=B.name and "
-		+ "D.id = B.id and E.id = B.id and F.name=C.name and G.id=A.id ";
-	String ss = VolcanoPlanner.normalizePlan(s);
-	VolcanoPlanner planner = new VolcanoPlanner();
-	
-//	planner.
-	System.out.println(ss);
-	
-    }
-    
-    
-    
-	//@Test
-	public void testQuerySelectCase2() { // question here -> do we need the 1rst
-											// distributed query?
-		//TODO run this there are some problems
-		System.out.println("------------testQueryParserCase2-----------------");
-		String query = "select count(Employee.salary) as total " + "from Employee " + "where Employee.salary>1500";
-		Parser parser = new Parser();
-		System.out.println(parser.processQuery(query));
-		System.out.println("------------testQueryParserCase2-----------------");
-	}
-
-	//@Test
-	public void testQuerySelectCase10() {// should detect JOIN on NAME
+	// @Test
+	public void testQuerySelectCase1() {// should detect repartition on NAME
 		System.out.println("------------testQueryParserCase10-----------------");
 		String s = "Select A.id from A, B, C where A.id=B.id and C.name=B.name ";
-		Parser parser = new Parser();
+		Parser parser = new Parser("REP");
 		System.out.println(parser.processQuery(s));
 
 		System.out.println("------------testQueryParserCase10------------------");
 	}
-	
+
+	//@Test
+	public void testQuerySelectCase7() {// should NOT DETECT repartition
+		System.out.println("------------testQueryParserCase7-----------------");
+		String s = "select * from A , B, C, D, E, F, G where " + "A.id=B.id and  A.name=B.name and C.name=B.name and "
+				+ "D.id = B.id and E.id = B.id and F.name=C.name and C.name = A.name and G.id=A.id ";
+		Parser parser = new Parser("REP");
+		System.out.println(parser.processQuery(s));
+
+		System.out.println("------------testQueryParserCase7-----------------");
+	}
+
 	@Test
-		public void testQuerySelectCase7() {// should NOT DETECT JOIN
-			System.out.println("------------testQueryParserCase7-----------------");
-			String s = "select * from A , B, C, D, E, F, G where " + "A.id=B.id and  A.name=B.name and C.name=B.name and "
-					+ "D.id = B.id and E.id = B.id and F.name=C.name and C.name = A.name and G.id=A.id ";
-			Parser parser = new Parser();
-			System.out.println(parser.processQuery(s));
+	public void testQuerySelectCase8() {// should NOT DETECT JOIN
+		System.out.println("------------testQueryParserCase7-----------------");
+		String s = "select A.name from A , B, C, D where " + "A.id=B.id and  A.name=B.name and C.name=B.name and "
+				+ "D.id = B.id  ";
+		Parser parser = new Parser("REP");
+		System.out.println(parser.processQuery(s));
 
-			System.out.println("------------testQueryParserCase7-----------------");
-		}
+		System.out.println("------------testQueryParserCase7-----------------");
+	}
 
-		
-//		 @Test
-			public void testQuerySelectCase8() {// should NOT DETECT JOIN
-				System.out.println("------------testQueryParserCase7-----------------");
-				String s = "select * from A , B, C, D where " + "A.id=B.id and  A.name=B.name and C.name=B.name and "
-						+ "D.id = B.id  ";
-				Parser parser = new Parser();
-				System.out.println(parser.processQuery(s));
-
-				System.out.println("------------testQueryParserCase7-----------------");
-			}
-		 
-		 //@Test
-			public void testQuerySelectCase6() {// should detect JOIN on NAME
-				System.out.println("------------testQueryParserCase6-----------------");
-				String s = "select distinct count(A.id) as \"count\", C.salary as \"sal\", "
-						+ "C.name as \"employee\", count(*) as total from A , B, C, D where "
-						+ "A.id=B.id and C.name=B.name and A.name=B.name and "
-						+ "C.age<B.age or C.age<>A.age and D.name=B.name";
-				Parser parser = new Parser();
-				System.out.println(parser.processQuery(s));
-
-				System.out.println("------------testQueryParserCase6-----------------");
-			}
+	@Test
+	public void testQuerySelectCase6() {// should detect direct JOIN on NAME
+		System.out.println("------------testQueryParserCase6-----------------");
+		String s = "select distinct count(A.id) as \"count\", count(*) as total from A , B, C, D where "
+				+ "A.id=B.id and C.name=B.name and A.name=B.name and "
+				+ "C.age<B.age or C.age<>A.age and D.name=B.name";
+		Parser parser = new Parser("REP");
+		System.out.println(parser.processQuery(s));
+		System.out.println("------------testQueryParserCase6-----------------");
+	}
 
 }

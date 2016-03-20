@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 public class Parser {
 	public static FrameworkConfig frameworkConfig;
 	private static Logger log = LoggerFactory.getLogger(Parser.class);
-
+	String opMode;
 	public void attachShutDownHook() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
@@ -32,6 +32,15 @@ public class Parser {
 		log.info("Shut Down Hook Attached.");
 	}
 
+	public Parser(){
+		opMode = null; //direct
+	}
+	
+	public Parser(String Opmode){
+		opMode = "REP"; //Repartition
+	}
+	
+	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		Parser parser = new Parser();
@@ -98,8 +107,10 @@ public class Parser {
 		query.setJoinOperations(joinAttrVisitor.joinOperations);
 		query.operatorAndSubtree = joinAttrVisitor.operatorAndSubtree;
 		query.JoinOperators = joinAttrVisitor.xlusiveOperator;
+		
 		Path path = Paths.get("UDF_Statement.sql");
-		String output = new DflComposer().writeQueryToFile(path, query, 10, "id", "");
+		query.OPMODE = this.opMode;
+		String output = new DflComposer().writeQueryToFile(path, query, 10, "result");
 		return output;
 	}
 

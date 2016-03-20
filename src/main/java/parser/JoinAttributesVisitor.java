@@ -31,7 +31,7 @@ public class JoinAttributesVisitor<R> implements SqlVisitor<R> {
     private Stack<String>             lastVisited          = new Stack<>();
     // private SqlSimpleNode node;
     private static final List<String> JoinOperators = new ArrayList<String>(
-            Arrays.asList("AND", "OR", "LIKE"));
+            Arrays.asList("AND"));
     SqlBasicVisitor.ArgHandler<R>     argHandler           = SqlBasicVisitor.ArgHandlerImpl.instance();
     List<SqlBasicCall> joinOperations = new ArrayList<SqlBasicCall>();
     List<String> xlusiveOperator = new ArrayList<>();

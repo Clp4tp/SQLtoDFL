@@ -39,7 +39,8 @@ public class SqlQueryMeta {
     private List<List<String>> functionsToTables = new ArrayList<>();
     // private SqlSimpleNode selectList;
     private  List<SqlBasicCall> whereOperations = new ArrayList<SqlBasicCall>();
-  
+    
+    public String OPMODE;
     public List<String> JoinOperators ;
     public Stack<OperatorOnSubtree> operatorAndSubtree;
 	public SqlQueryMeta(SqlSelect call) {
