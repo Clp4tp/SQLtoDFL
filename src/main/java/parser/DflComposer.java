@@ -100,10 +100,7 @@ public final class DflComposer {
 			dfl += dflStmt + selectStmt;
 		}
 
-		// CREATE THE FINAL STATEMENTS REPARTITION AND END PRODUCT
-		// if()
-
-		// TODO -- Start repartitioning here
+		
 		dfl += repartition(query, dfl, noPartitions, resultTable, direct);
 
 		try (BufferedWriter writer = Files.newBufferedWriter(path, charset)) {
@@ -135,7 +132,7 @@ public final class DflComposer {
 				} else {
 					temp = "temp";
 				}
-				// String temp = key.equals("*") ? "" : "temp";
+				
 				String operator = list.get(0) + "(" + temp + prettyPrint(list.get(1)) + ")";
 				stmt += operator;
 				if (aliasMap.containsKey(list.get(0) + "(" + list.get(1) + ")")) {
@@ -151,7 +148,7 @@ public final class DflComposer {
 					stmt += "temp" + list[0] + "." + list[1];
 				}
 
-				// stmt=stmt.substring(0, stmt.lastIndexOf('.'));
+			
 				stmt += ",";
 			}
 		} else {// append star
@@ -175,27 +172,17 @@ public final class DflComposer {
 		// with join operator [ =, >=, <= ]
 			if (query.getFromTables().size() > 1) {
 				List<JoinCondition> joins = new ArrayList<>();
-				// Stack<JoinCondition> stack = new Stack<>();
 				for (SqlBasicCall call : query.getJoinOperations()) {
 					joins.add(new JoinCondition(call));
 					// stack.push(new JoinCondition(call));
 				}
 
 				manager = new PartitionManager(joins, query);
-
-				// String directJoin = JoinCondition.findCycleImproved(joins,
-				// query);
 				if (!manager.masterPartition.equals("")) {
 					log.info("Direct JOIN detected on attribute " + manager.masterPartition);
 				} else {
-					// TODO work here to start
 					if(query.OPMODE!=null) log.info("Repartitions Detected");
 				}
-				// if (directJoin != "") {
-				// log.info("Direct JOIN detected on attribute " + directJoin);
-				// } else
-				// log.info("No JOIN detected ");
-
 				return manager.masterPartition;
 			
 		} else if (query.getFromTables().size() <= 1)
@@ -299,7 +286,6 @@ public final class DflComposer {
 			partitionDfl += "from " + prettyPrint(query.getFromTables().toString()) + " \n";
 		}
 
-		// WHERE LAST STATEMENT
 		partitionDfl += "where ";
 		String[] s = prettyPrint(query.getWhere().toString()).split("\\s+");
 		for (String subs : s) {
